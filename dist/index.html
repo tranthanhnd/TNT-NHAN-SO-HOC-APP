@@ -477,12 +477,27 @@ const CHALLENGE_CONTENT = {
 };
 const CHALLENGE_SOURCE = 'Hans Decoz, World Numerology (worldnumerology.com/numerology-challenges)';
 const BRIDGE_SOURCE = 'Hans Decoz, World Numerology (worldnumerology.com/numerology-bridge-numbers)';
+const HIDDEN_PASSION_SOURCE = 'Hans Decoz, World Numerology (worldnumerology.com/numerology-hidden-passion)';
 const BRIDGE_DEFS = [
   {key:'ddsm', labelA:'Đường Đời', labelB:'Sứ Mệnh', a:'lifePath', b:'destiny', note:'Dung hòa giữa hướng đi cuộc đời (Đường Đời) và cách thể hiện ra bên ngoài / con đường sự nghiệp (Sứ Mệnh).'},
   {key:'lhsm', labelA:'Linh Hồn', labelB:'Sứ Mệnh', a:'soul', b:'destiny', note:'Dung hòa giữa động lực/khao khát nội tâm (Linh Hồn) và con đường thể hiện ra hành động (Sứ Mệnh).'},
   {key:'ddns', labelA:'Đường Đời', labelB:'Ngày Sinh', a:'lifePath', b:'birthday', note:'Dung hòa giữa hướng đi lớn của cuộc đời (Đường Đời) và tài năng/dấu ấn riêng bẩm sinh (Ngày Sinh).'},
+  {key:'lhnc', labelA:'Linh Hồn', labelB:'Nhân Cách', a:'soul', b:'personality', note:'Dung hòa giữa "con người bên trong" (Linh Hồn — điều bạn thật sự mong muốn) và "hình ảnh bên ngoài" (Nhân Cách — cách người khác nhìn thấy bạn khi mới tiếp xúc).'},
 ];
-function computeBridgeChallenge(day, month, year, parts){
+/* Đam Mê Ẩn (Hidden Passion, Hans Decoz): con số xuất hiện NHIỀU NHẤT
+   khi quy đổi toàn bộ họ tên khai sinh sang số theo đúng bảng Pythagoras
+   (tái dùng đúng số liệu đã tính cho Biểu Đồ Tên — nameCounts). Có thể
+   có nhiều Đam Mê Ẩn nếu 2+ con số cùng đồng hạng cao nhất, đúng nguyên
+   tắc Decoz "không được tự ý chọn một số" khi bị đồng hạng. */
+function computeHiddenPassion(nameCounts){
+  let max = 0;
+  for (let d=1; d<=9; d++) if ((nameCounts[d]||0) > max) max = nameCounts[d];
+  if (max === 0) return [];
+  const result = [];
+  for (let d=1; d<=9; d++) if ((nameCounts[d]||0) === max) result.push({digit:d, count:max});
+  return result;
+}
+function computeBridgeChallenge(day, month, year, parts, nameCounts){
   // ---- Số Thử Thách (Challenge Numbers) ----
   // Rút gọn HOÀN TOÀN tháng/ngày/năm về 1 chữ số (kể cả số Vua),
   // đúng công thức Decoz — khác quy ước "giữ số Vua" dùng cho Đường Đời.
@@ -511,7 +526,21 @@ function computeBridgeChallenge(day, month, year, parts){
     return {...def, va, vb, value: Math.abs(vaR - vbR)};
   });
 
-  return {challenges, bridges};
+  // Đam Mê Ẩn (Hidden Passion) — 1 Cầu Nối Linh Hồn↔Đam Mê Ẩn cho MỖI
+  // giá trị Đam Mê Ẩn (có thể nhiều nếu đồng hạng), đúng nguyên tắc Decoz.
+  const hiddenPassion = computeHiddenPassion(nameCounts || {});
+  const soulR = reduceFull(parts.soul.value);
+  hiddenPassion.forEach(hp=>{
+    const hpR = reduceFull(hp.digit);
+    bridges.push({
+      key: 'lhdm-'+hp.digit, labelA:'Linh Hồn', labelB:'Đam Mê Ẩn',
+      note: 'Dung hòa giữa động lực/khao khát nội tâm (Linh Hồn) và năng khiếu/sở trường tiềm ẩn thể hiện qua họ tên (Đam Mê Ẩn).',
+      va: parts.soul.value, vb: hp.digit,
+      value: Math.abs(soulR - hpR),
+    });
+  });
+
+  return {challenges, bridges, hiddenPassion};
 }
 
 function fullCalculate(fullName, day, month, year){
@@ -534,7 +563,7 @@ function fullCalculate(fullName, day, month, year){
   ]);
   const lifeStages = computeGiaiDoanDinhCao(day, month, year, lifePath.value);
   const charts = computeCharts(day, month, year, seq);
-  const combine = computeBridgeChallenge(day, month, year, {lifePath, destiny, soul, personality, birthday});
+  const combine = computeBridgeChallenge(day, month, year, {lifePath, destiny, soul, personality, birthday}, charts.nameCounts);
   return {lifePath, chuDao, destiny, soul, personality, birthday, attitude, maturity, missing, karmic, lifeStages, charts, combine};
 }
 
@@ -962,7 +991,7 @@ function renderCombine(r){
   const c = r.combine;
 
   let html = `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-    <h2 style="margin-bottom:0;">🌉 Kết Hợp Chỉ Số — Số Thử Thách &amp; Số Cầu Nối</h2>
+    <h2 style="margin-bottom:0;">🌉 Kết Hợp Chỉ Số — Số Thử Thách, Đam Mê Ẩn &amp; Số Cầu Nối</h2>
     <button class="btn-ghost no-print btn-export" onclick="exportPDF('combine')">🖨️ Xuất PDF</button>
   </div>`;
   html += `<p class="muted" style="margin-bottom:16px;"><i>Đây là nội dung THAM KHẢO BỔ SUNG, biên soạn từ nguồn quốc tế uy tín (Hans Decoz — World Numerology; có đối chiếu thêm nguyên tắc tổng hợp của Matthew Goodwin), KHÔNG trích từ tài liệu Excel gốc của anh và KHÔNG do AI tự suy diễn lúc chạy — đã nghiên cứu, biên soạn sẵn và lưu vào Thư viện. Mục tiêu: khi 2 chỉ số của bạn có xu hướng khác/ngược nhau, đây là công cụ để xác định bài học cần khắc phục (Số Thử Thách) và phẩm chất cần bồi đắp để dung hòa (Số Cầu Nối) — không phải kiểu chấm điểm cộng trừ.</i></p>`;
@@ -982,9 +1011,31 @@ function renderCombine(r){
   });
   html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 20px;">Nguồn: ${CHALLENGE_SOURCE}.</p>`;
 
+  // ----- Đam Mê Ẩn (Hidden Passion) -----
+  html += `<h3 style="margin:20px 0 10px;">Đam Mê Ẩn (Hidden Passion)</h3>`;
+  html += `<p class="muted" style="margin-bottom:10px;">Con số xuất hiện NHIỀU NHẤT khi quy đổi toàn bộ họ tên khai sinh của bạn sang số (dùng lại đúng số liệu Biểu Đồ Tên) — đại diện cho năng khiếu/sở trường tiềm ẩn mà bạn có khả năng thể hiện mạnh.</p>`;
+  if (c.hiddenPassion.length){
+    html += `<div class="stage-row">`;
+    c.hiddenPassion.forEach(hp=>{
+      html += `<div class="stage-block"><div class="age">Xuất hiện ${hp.count} lần</div><div class="num">${hp.digit}</div><div class="lbl">Đam Mê Ẩn</div></div>`;
+    });
+    html += `</div>`;
+    if (c.hiddenPassion.length > 1){
+      html += `<p class="muted" style="font-size:0.78rem;margin-bottom:10px;"><i>Họ tên của bạn có ${c.hiddenPassion.length} con số cùng đồng hạng cao nhất — theo đúng nguyên tắc Decoz, cả ${c.hiddenPassion.length} đều là Đam Mê Ẩn, không tự ý chọn riêng 1 số.</i></p>`;
+    }
+    c.hiddenPassion.forEach((hp,i)=>{
+      const uni = universalOf(hp.digit);
+      html += `<details ${i===0?'open':''}><summary>Đam Mê Ẩn ${hp.digit} (xuất hiện ${hp.count} lần trong họ tên)</summary>
+        <div class="body">${uni ? (uni.phoQuat ? `<p><b style="color:var(--gold-light)">Ý nghĩa phổ quát:</b> ${uni.phoQuat}</p>` : '') + (uni.nangLuc ? `<p style="margin-top:6px;"><b style="color:var(--gold-light)">Năng lực:</b> ${uni.nangLuc}</p>` : '') : 'Chưa có dữ liệu.'}</div></details>`;
+    });
+    html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 20px;">Nguồn: ${HIDDEN_PASSION_SOURCE}. Ý nghĩa dùng lại đúng bộ "Ý nghĩa các con số" đã có trong Thư viện của anh.</p>`;
+  } else {
+    html += `<p class="muted">Không xác định được (họ tên trống).</p>`;
+  }
+
   // ----- Số Cầu Nối -----
-  html += `<h3 style="margin:20px 0 10px;">Số Cầu Nối (Bridge Numbers)</h3>`;
-  html += `<p class="muted" style="margin-bottom:10px;">Khi 2 chỉ số dưới đây có xu hướng khác nhau (VD Đường Đời thiên về tự do, Sứ Mệnh thiên về trách nhiệm), Số Cầu Nối chỉ ra PHẨM CHẤT cần chủ động rèn luyện để dung hòa hai xu hướng đó — không phải "bên nào thắng, bên nào thua".</p>`;
+  html += `<h3 style="margin:20px 0 10px;">Số Cầu Nối (Bridge Numbers) — đủ cả 5 loại</h3>`;
+  html += `<p class="muted" style="margin-bottom:10px;">Khi 2 chỉ số dưới đây có xu hướng khác nhau (VD Đường Đời thiên về tự do, Sứ Mệnh thiên về trách nhiệm), Số Cầu Nối chỉ ra PHẨM CHẤT cần chủ động rèn luyện để dung hòa hai xu hướng đó — không phải "bên nào thắng, bên nào thua".${c.hiddenPassion.length>1?` (Vì họ tên của bạn có ${c.hiddenPassion.length} Đam Mê Ẩn đồng hạng nên có ${c.hiddenPassion.length} thẻ Cầu Linh Hồn↔Đam Mê Ẩn bên dưới, mỗi thẻ ứng với 1 Đam Mê Ẩn.)`:''}</p>`;
   c.bridges.forEach((b,i)=>{
     const uniBridge = universalOf(b.value);
     const uniA = universalOf(b.va);
@@ -1002,7 +1053,7 @@ function renderCombine(r){
   html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 4px;">Nguồn: ${BRIDGE_SOURCE}. Ý nghĩa Cầu Nối dùng lại đúng bộ "Ý nghĩa các con số" đã có trong Thư viện của anh.</p>`;
   html += `<p class="muted" style="font-size:0.72rem;margin-top:4px;"><i>* Quy ước: nếu chỉ số nguồn là số Vua (11/22/33), Cầu Nối được tính trên dạng đã rút gọn hoàn toàn về 1 chữ số, theo cùng nguyên tắc rút gọn Decoz áp dụng cho Số Thử Thách.</i></p>`;
 
-  html += `<p class="muted" style="margin-top:16px;font-size:0.75rem;">* Phần "Hài Hòa/Xung Khắc" theo bảng đầy đủ 45 cặp số của Matthew Goodwin hiện CHƯA đưa vào app vì tài liệu gốc tra cứu được không hiển thị đủ toàn bộ bảng — tránh tự suy diễn khi chưa có căn cứ đầy đủ. Xem chi tiết trong tài liệu "4. Tài Liệu Tham Khảo Bổ Sung — Kỹ thuật kết hợp nhiều chỉ số" trong Thư viện.</p>`;
+  html += `<p class="muted" style="margin-top:16px;font-size:0.75rem;">* Phần "Hài Hòa/Xung Khắc" theo bảng đầy đủ 45 cặp số (Matthew Goodwin hoặc Hans Decoz) hiện CHƯA đưa vào app: đã tra cứu và đối chiếu thử với đúng trang gốc worldnumerology.com nhưng chưa tìm được bảng ma trận nào khớp/đáng tin cậy (kể cả 1 bản do người khác tổng hợp qua AI cũng bị phát hiện có mâu thuẫn với nguồn gốc khi đối chiếu) — tránh tự suy diễn khi chưa có căn cứ xác thực. Xem chi tiết trong tài liệu "4. Tài Liệu Tham Khảo Bổ Sung — Kỹ thuật kết hợp nhiều chỉ số" trong Thư viện.</p>`;
 
   box.innerHTML = html;
 }
