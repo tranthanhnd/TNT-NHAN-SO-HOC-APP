@@ -347,12 +347,20 @@ function reduceKeepMaster(n){
 function reduceFull(n){ while(n>9) n = digitSum(n); return n; }
 
 function computeLifePath(day, month, year){
-  const dayReduced = reduceKeepMaster(day>9 ? digitSum(day) : day);
+  // QUAN TRỌNG (theo đúng Excel gốc, VD Trần Thành Thái 23/08/1996: ngày 2+3=5,
+  // tháng 0+8=8, năm 1+9+9+6=25 — năm KHÔNG rút gọn tiếp về 1 chữ số — rồi mới
+  // cộng 5+8+25=38 và rút gọn TỔNG này 1 lần duy nhất, giữ số Vua nếu tổng rơi
+  // đúng vào 11/22/33 (3+8=11 → giữ nguyên 11, không rút gọn tiếp 1+1=2).
+  // Rút gọn riêng từng thành phần (ngày/tháng/năm) TRƯỚC khi cộng — như cách làm
+  // cũ — có thể làm "mất" số Vua lẽ ra xuất hiện ở tổng cuối cùng, nên ở đây mỗi
+  // thành phần chỉ được rút gọn ĐÚNG 1 LẦN (cộng các chữ số của riêng nó), còn
+  // việc giữ/rút số Vua chỉ áp dụng cho TỔNG cuối cùng.
+  const dayReduced = day>9 ? digitSum(day) : day;
   let monthReduced;
   if (month === 11) monthReduced = 11;
   else if (month <= 9) monthReduced = month;
-  else monthReduced = reduceKeepMaster(digitSum(month));
-  const yearReduced = reduceKeepMaster(digitSum(year));
+  else monthReduced = digitSum(month);
+  const yearReduced = digitSum(year);
   const preFinal = dayReduced + monthReduced + yearReduced;
   const value = reduceKeepMaster(preFinal);
   return {value, preFinal, dayReduced, monthReduced, yearReduced};
