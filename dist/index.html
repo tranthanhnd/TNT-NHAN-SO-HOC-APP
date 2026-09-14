@@ -176,9 +176,10 @@
     .section[data-key="karmic"]{order:2;}
     .section[data-key="lifeStages"]{order:3;}
     .section[data-key="charts"]{order:4;}
-    .section[data-key="combine"]{order:5;}
-    .section[data-key="partner"]{order:6;}
-    .section[data-key="summary"]{order:7;}
+    .section[data-key="vowel"]{order:5;}
+    .section[data-key="combine"]{order:6;}
+    .section[data-key="partner"]{order:7;}
+    .section[data-key="summary"]{order:8;}
     .card{background:#fff !important;border:1px solid #999 !important;box-shadow:none !important;color:#141414 !important;backdrop-filter:none !important;page-break-inside:avoid;}
     h1,h2,h3{color:#7a5a12 !important;}
     p,div,span,li,.formula{color:#141414 !important;}
@@ -247,9 +248,11 @@
 
     <div class="section card" id="chartsCard" data-key="charts"></div>
 
+    <div class="section card" id="vowelCard" data-key="vowel"></div>
+
     <div class="section card" id="combineCard" data-key="combine"></div>
 
-    <div class="section card" id="timeCard" data-key="time"
+    <div class="section card" id="timeCard" data-key="time">
       <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         <h2 style="margin-bottom:0;">🕒 Vận theo thời gian — Năm / Tháng / Ngày Cá Nhân</h2>
         <button class="btn-ghost no-print btn-export" onclick="exportPDF('time')">🖨️ Xuất PDF</button>
@@ -361,6 +364,71 @@ function nameToLetterSequence(fullName){
   }
   return seq;
 }
+
+/* =========================================================
+   CÁ TÍNH THEO NGUYÊN ÂM ĐẦU TIÊN CỦA TÊN
+   Nguồn: ĐÃ ĐỌC TRỰC TIẾP file Excel gốc "3. Tai Lieu GIAI MA NHAN SO
+   HOC.xlsx", sheet "Bao cao Mau", ô A334–C341 (mục "CÁ TÍNH CỦA TÊN
+   NGƯỜI CÓ NGUYÊN ÂM ĐẦU TIÊN LÀ"). Trích nguyên văn 100%, không paraphrase.
+   Dùng lại đúng logic phát hiện nguyên âm/Y đã có ở nameToLetterSequence()
+   (áp dụng đúng quy tắc chữ Y ở A345: Y là nguyên âm khi cạnh phụ âm, là
+   phụ âm khi nằm giữa 2 nguyên âm) để xác định NGUYÊN ÂM ĐẦU TIÊN của tên.
+   Trước khi có mục này, nội dung CHƯA từng được kết nối vào bất kỳ đâu
+   trong app (đã kiểm tra lại toàn bộ CONTENT — không trùng lặp).
+   ========================================================= */
+const VOWEL_PERSONALITY = {
+  A: `* Nếu tên bạn có nguyên âm bắt đầu bằng chữ A. Ví dụ bạn tên là Mai, thì một phần tính cách của bạn là :<br>
+- Bạn ấy là người mạnh mẽ, quyết đoán, tự chủ, độc lập, bảo thủ, độc đoán, bướng bỉnh và có cá tính, có cái tôi cao.<br>
+- Bạn ấy muốn được thể hiện, được ghi nhận, được hơn người, không thích dưới trướng người khác.<br>
+- Năng lực người thủ lĩnh.<br>
+- Bạn có ngã rồi lại đứng dậy được.<br>
+- Nếu bạn bán hàng cho người có chữ A thì bạn không được áp đặt họ, không nói nhiều, phải để họ tự ra quyết định.<br>
+Ngoài ra còn rất nhiều chỉ số khác nữa để bạn thấu hiểu toàn bộ con người bạn ấy.`,
+  E: `* Nếu tên bạn có nguyên âm bắt đầu bằng chữ E, Ê, ví dụ bạn tên LEN, thì một phần tính cách của bạn là :<br>
+- Thích tự do phóng khoáng, trải nghiệm, khám phá cái mới, mạo hiểm.<br>
+- Sợ sự giàng buộc, trói buộc.<br>
+- Thích làm việc theo cách mình muốn, thích xê dịch.<br>
+- Thích sành điệu, sang trọng, thích những nơi náo nhiệt, vui vẻ.<br>
+- Có thể bạn dễ đam mê vào rượu chè, trai gái, cờ bạc, games... Những thú vui này sẽ đốt đi năng lượng của bạn.<br>
+Nếu khách hàng của bạn là chữ E, hãy cho họ dùng thử sản phẩm có chất lượng, bạn hãy mời họ đến những nơi sang trọng, vui chơi, bạn có thể chốt sale trên bàn nhậu.`,
+  U: `* Nếu tên bạn có nguyên âm bắt đầu bằng chữ U, Ư, ví dụ Huy, thì bạn sẽ có một số tính cách :<br>
+- Bạn giàu trí tưởng tượng.<br>
+- Có năng lực ngôn từ tốt, nói nhiều, nói lan man.<br>
+- Cũng có bạn lại nói rất ít, suy nghĩ sâu sắc nhưng không nói ra.<br>
+- Là người nhạy bén với các cơ hội.<br>
+- Hành động tự phát dễ dẫn đến hậu quả sai lầm và lãnh hậu quả.<br>
+- Thích tư vấn và đưa ra lời khuyên.`,
+  O: `* Nếu tên bạn có nguyên âm bắt đầu bằng chữ O, Ô, Ơ ví dụ Oanh, Hoa..., thì một phần tính cách bạn sẽ là :<br>
+- Người giàu tình yêu thương, luôn quan tâm tới mọi người, gần gũi yêu thương người khác như một người mẹ.<br>
+- Bạn quan tâm tới đồng nghiệp, khách hàng...<br>
+- Nếu càng gần gũi bạn bạn càng quan tâm hơn.<br>
+- Khi bạn giận dỗi, chỉ cần người khác xin lỗi hoặc tỏ ra hối lỗi là bạn tha thứ ngay vì bạn dễ bao dung và dễ mủi lòng.<br>
+- Bạn muốn được người khác ghi nhận lòng tốt của bạn.<br>
+- Có kiến thức và hiểu biết, thích dạy bảo người khác.<br>
+- Bạn thích làm chuyện bao đồng, hay làm thay, hay sốt ruột. Nên bạn hay thấy mệt mỏi vì quá sức.`,
+  I: `* Nếu tên bạn có nguyên âm bắt đầu bằng chữ I, ví dụ Kiên, Miên... bạn sẽ có một phần tính cách như thế này :<br>
+- Là người có uy tín.<br>
+- Là người sống vì người khác, hướng tới cộng đồng, xu hướng làm việc vì cộng đồng.<br>
+- Có nỗi đau trong quá khứ.<br>
+- Là người nhạy cảm, dễ bị tổn thương.<br>
+- Bạn sẵn lòng giúp người khác, hay chịu thiệt thòi nhưng bạn chấp nhận.<br>
+- Bạn có trí tuệ, tâm linh, có khí chất hơn người nhưng bạn ít bộc lộ sự kiêu ngạo ra.<br>
+- Bạn có thể là người thầy nhưng đôi khi bạn loay hoay không định hướng được. Bạn thích lĩnh vực nào hãy bám theo nó và bạn sẽ thành công.<br>
+- Khi bán hàng cho người có chữ I, bạn hãy nêu ra giá trị nhân văn của sản phẩm, họ sẽ mua ngay.`,
+  Y: `* Nếu tên bạn có nguyên âm bắt đầu bằng chữ Y. Ví dụ bạn tên Yên, Yến thì bạn sẽ có một phần những tính cách sau đây :<br>
+* Bạn là người có suy nghĩ chín chắn nhưng rất quyết đoán.<br>
+- Bạn là người khá lập dị.<br>
+- Trong cuộc sống bạn là người thường phải đối mặt với khó khăn và đặc biệt là sự đơn độc.<br>
+Bạn yêu thích tìm tòi, học hỏi. Trong đầu bạn thường có câu hỏi dị : Tại sao mình sinh ra, chết đi mình đi về đâu ?<br>
+Mặt tiêu cực : Bạn thường cảm thấy mình rất cô đơn, hơi nhiều dục vọng, cảm xúc thất thường, bảo thủ.`,
+};
+const VOWEL_PERSONALITY_EXAMPLE = {A:'Mai', E:'Len', U:'Huy', O:'Oanh/Hoa', I:'Kiên/Miên', Y:'Yên/Yến'};
+function firstVowelOfName(fullName){
+  const seq = nameToLetterSequence(fullName);
+  const firstVowel = seq.find(s=>s.isVowel);
+  return firstVowel ? firstVowel.ch : null;
+}
+
 function digitSum(n){ return String(Math.abs(n)).split('').reduce((a,d)=>a+parseInt(d,10),0); }
 function reduceKeepMaster(n){
   while(n>9 && !MASTER_NUMBERS.includes(n)) n = digitSum(n);
@@ -414,23 +482,92 @@ function computeMaturity(lifePathValue, destinyValue){
   return {value: reduceKeepMaster(raw), raw};
 }
 /* =========================================================
-   TƯƠNG HỢP ĐỐI TÁC (2 người) — Con Số Căng Thẳng Tâm Hồn & Con
-   Số Căng Thẳng Thái Độ. Nguồn: ĐÃ ĐỌC TRỰC TIẾP đúng file Excel
-   gốc "3. Tai Lieu GIAI MA NHAN SO HOC.xlsx" (sheet "Bao cao Mau",
-   ô A20 mục "3b. CON SỐ CĂNG THẲNG TÂM HỒN" và ô A27 mục "7b. Con
-   số Căng thẳng Thái độ") — không còn dựa trên ảnh chụp cắt nữa,
-   đã xác nhận đủ, không thiếu. Theo yêu cầu của anh, tab này CHỈ
-   tính Thái Độ & Linh Hồn của người thứ 2 để so sánh — chủ động
-   BỎ QUA "Các Tổ Hợp" (mục dùng Đường Đời/Ngày Sinh, cũng có sẵn
-   nguyên văn đầy đủ trong file — kể cả bảng 3 tên tổ hợp: Tâm Trí
-   1-5-7, Tư Duy Kinh Doanh 2-4-8, Sáng Tạo 3-6-9 — nhưng chưa dùng
-   ở đây, để dành nếu sau này cần cho tab "Kết Hợp Chỉ Số" 1 người).
+   TƯƠNG HỢP ĐỐI TÁC (2 người) — Con Số Căng Thẳng Tâm Hồn, Con Số
+   Căng Thẳng Thái Độ & Tương Hợp Đường Đời. Nguồn: ĐÃ ĐỌC TRỰC TIẾP
+   đúng file Excel gốc "3. Tai Lieu GIAI MA NHAN SO HOC.xlsx" (sheet
+   "Bao cao Mau", ô A20 mục "3b. CON SỐ CĂNG THẲNG TÂM HỒN", ô A27
+   mục "7b. Con số Căng thẳng Thái độ", và các ô C146/C150/C155/
+   C159/C162/C165/C169/C172/C176 — đoạn "hòa hợp/hòa thuận/mắc kẹt/
+   căng thẳng với người mang CS Đường đời..." nằm trong luận giải
+   riêng của từng Đường Đời 1-9) — không còn dựa trên ảnh chụp cắt
+   nữa, đã xác nhận đủ, không thiếu. Theo yêu cầu của anh, tab này
+   tính Thái Độ & Linh Hồn của người thứ 2 để so sánh, và bổ sung
+   thêm mục Tương Hợp Đường Đời (anh hỏi lại và xác nhận cần thêm
+   càn cứ này) — chủ động BỎ QUA "Các Tổ Hợp" (mục dùng Đường Đời/
+   Ngày Sinh, cũng có sẵn nguyên văn đầy đủ trong file — kể cả bảng
+   3 tên tổ hợp: Tâm Trí 1-5-7, Tư Duy Kinh Doanh 2-4-8, Sáng Tạo
+   3-6-9 — nhưng chưa dùng ở đây theo đúng yêu cầu trước, để dành
+   nếu sau này cần cho tab "Kết Hợp Chỉ Số" 1 người).
+   LƯU Ý MINH BẠCH: đã tìm và đối chiếu kỹ toàn bộ mục Chủ Đạo (CSCĐ,
+   ô A181-C291) — tài liệu gốc KHÔNG có đoạn nào nói về tương thích/
+   hòa hợp giữa 2 người theo Chủ Đạo (chỉ có 8 mục luận giải chung:
+   Mục đích sống, Điều kiện phát triển, Đặc điểm nổi bật...). Vì vậy
+   Tương Hợp Đường Đời dưới đây CHỈ dùng Đường Đời, không có phần
+   Chủ Đạo — tránh suy diễn khi chưa có căn cứ xác thực.
    Câu "tư vấn quan hệ đối tác" tổng hợp cuối mục do Claude viết
-   kết nối từ 2 số Căng Thẳng đã có căn cứ, không phải trích nguyên
+   kết nối từ các dữ kiện đã có căn cứ, không phải trích nguyên
    văn từ Excel — có ghi chú rõ trong app.
    ========================================================= */
 function pairTension(a, b){
   return Math.abs(a - b);
+}
+// LIFE_PATH_COMPAT: trích nguyên văn 100% các đoạn "hòa hợp/khó khăn với
+// người mang CS Đường đời X" nằm trong luận giải riêng của từng Đường Đời
+// 1-9 (không có cho Chủ Đạo và không có cho các số Vua 11/22/33 — nguồn
+// KHÔNG đề cập). Đây là tư liệu 1 CHIỀU (góc nhìn của chính chủ số đó về
+// đối phương), KHÔNG phải ma trận 45 cặp đầy đủ và đối xứng — nên khi hiển
+// thị, app tra cứu cả 2 chiều (A→B và B→A) và hiển thị TRUNG THỰC những gì
+// tìm thấy, không suy diễn thêm cho các cặp tài liệu không đề cập.
+const LIFE_PATH_COMPAT = {
+  1: [
+    {other:3, tag:'hoa-hop', quote:'Bạn sẽ hòa thuận với ai đó có CS ĐƯỜNG ĐỜI SỐ 3. Bạn biết cách đưa ra sáng kiến và số 3 thích giao tiếp. Cùng nhau các bạn thảo luận, bàn bạc và khơi dậy các ý tưởng và khởi động những dự án đáng tin cậy, sinh lợi và bền vững.'},
+    {other:5, tag:'hoa-hop', quote:'Bạn cũng có mối quan hệ tốt với ai đó có CS ĐƯỜNG ĐỜI SỐ 5. Số 5 là tự do, số 1 là độc lập... số 5 cũng ghét những thói quen, sự lặp đi lặp lại. Nếu cùng nhau, các bạn sẽ không có sự nhàm chán.'},
+    {other:9, tag:'kho-khan', quote:'Với ai đó mang CS Đường đời 9, bạn sẽ gặp khó khăn khi gắn bó. Số 1 ở đầu chu kỳ, rất năng động; số 9 ở cuối chu kỳ, hơi rụt rè, chậm chạp. Đối với bạn nó như bị tụt lại phía sau. Bạn mất kiên nhẫn và điều này sẽ gây ra sự xích mích giữa hai người.'},
+  ],
+  2: [
+    {other:6, tag:'hoa-hop', quote:'Bạn rất hòa hợp với ai đó có CS ĐƯỜNG ĐỜI SỐ 6, đặc biệt là về tình yêu... đó cũng là sự kết hợp hoàn hảo để bắt đầu xây dựng gia đình và sinh con.'},
+    {other:8, tag:'hoa-hop', quote:'Bạn cũng kết hợp tốt đẹp với người có CS ĐƯỜNG ĐỜI SỐ 8. Số 2 + 8 = 10. Đây là sự kết hợp lý tưởng để cùng nhau khởi động một dự án rất cụ thể và rất vật chất như BẤT ĐỘNG SẢN. Bạn biết tận dụng thời điểm, còn người số 8 biết biến thử thách thành cơ hội.'},
+    {other:2, tag:'kho-khan', quote:'Bạn với người có CS Đường đời số 2 (cùng số) thì hơi khó đưa ra quyết định cùng nhau và cả hai bạn đều dễ xúc động. Vậy nên sẽ hơi khó khăn hơn.'},
+  ],
+  3: [
+    {other:1, tag:'hoa-hop', quote:'Bạn sẽ hòa hợp với người có CS Đường đời là số 1... 2 bạn hoàn toàn khác biệt nhưng lại bổ sung cho nhau. Số 3 nói và giao tiếp giỏi, số 9 dè dặt hơn (áp dụng tương tự khi đi cùng số 1).'},
+    {other:9, tag:'hoa-hop', quote:'Bạn cũng phù hợp với số 9. Nếu bạn nghĩ rằng 2 số này không phù hợp với nhau, sẽ hơi căng thẳng, nhưng không hề: 2 bạn hoàn toàn khác biệt nhưng lại bổ sung cho nhau. Nếu bạn khởi động một dự án, số 9 sẽ âm thầm tiếp sức cho bạn và chắc chắn bạn sẽ thành công.'},
+    {other:4, tag:'kho-khan', quote:'Bạn có mối quan hệ hơi căng thẳng với đường đời số 4, có thể có những cuộc tranh cãi, đòi hỏi sự công bằng quyền lực: Ai sẽ là người nắm quyền lãnh đạo? Số 4 thường độc đoán, số 3 thường nghĩ những ý kiến của mình là tốt, vậy nên giữa 3 và 4 thường không phân thắng bại.'},
+  ],
+  4: [
+    {other:4, tag:'hoa-hop', quote:'Bạn sẽ hòa thuận với những người có cùng ĐƯỜNG ĐỜI SỐ 4 như mình. 4+4=8. Số 8 trong số học là bạn gia tăng gấp đôi cơ hội thành công. Các bạn xắn tay áo lên và dồn hết sức lực để xây dựng các dự án cụ thể của mình và các bạn thành công.'},
+    {other:7, tag:'hoa-hop', quote:'ĐƯỜNG ĐỜI SỐ 4 cũng hòa hợp với số 7, số 7 là một con số thiêng liêng. Sau khi đặt ra mục tiêu, số 7 sẽ nhắc bạn về những bước không thể bỏ qua và bạn sẽ đến đích an toàn.'},
+    {other:9, tag:'kho-khan', quote:'Với số 9 thì hơi phức tạp hơn một chút, số 9 là người tình cảm, nhạy cảm. Bạn sẽ trách số 9 tuy hơi đáng yêu nhưng hay phàn nàn, than thở. Trong khi bạn thấy mình là người cứng rắn... Như vậy các bạn làm phiền nhau.'},
+  ],
+  5: [
+    {other:3, tag:'hoa-hop', quote:'Bạn hòa hợp với người có CS Đường đời số 3, bạn + số 3 + dự án chung... Số 3 mang lại cho bạn những ý tưởng mới. Thật tuyệt vời khi các bạn có những gia vị cho cuộc sống hàng ngày không nhàm chán.'},
+    {other:5, tag:'hoa-hop', quote:'Bạn với người có con số Đường đời 5 (cùng số) cũng là sự kết hợp tuyệt vời, đó là nhân đôi độc lập, nhân đôi tự do. Không có quan hệ chiếm hữu, các bạn tin tưởng và tôn trọng lãnh thổ của nhau.'},
+    {other:8, tag:'kho-khan', quote:'Bạn mắc kẹt với người có CS ĐƯỜNG ĐỜI số 8. Bạn thích thêm gia vị cho cuộc sống hàng ngày, loại bỏ thói quen, thay đổi các điểm chuẩn. Số 8 lại thích bám vào các điểm chuẩn cũ của nó. Nếu số 8 nhốt bạn thì bạn sẽ như con sư tử lồng lộn muốn thoát khỏi cũi.'},
+  ],
+  6: [
+    {other:9, tag:'hoa-hop', quote:'Quan hệ của bạn với người có CS Đường đời 9 (và với 6) là Sự sáng tạo nhân từ. Cả hai đều vị tha, luôn yêu thương mọi người... Hai bạn cùng nhau hài hòa các dự án của mình và có thể phát minh ra hàng nghìn kỳ quan trong suốt hành trình của các bạn.'},
+    {other:6, tag:'hoa-hop', quote:'Quan hệ của bạn với người cùng CS Đường đời 6 cũng là Sự sáng tạo nhân từ — cả hai đều vị tha, luôn tìm cách đáp ứng mong muốn của người thân thiết.'},
+    {other:8, tag:'kho-khan', quote:'Với một người thuộc ĐƯỜNG ĐỜI SỐ 8, bạn có mối quan hệ căng thẳng hơn. Bạn khá mơ mộng, trong khi người số 8 lại rất thực tế... sau một thời gian, sự căng thẳng đó làm mối quan hệ trở nên mệt mỏi.'},
+  ],
+  7: [
+    {other:3, tag:'hoa-hop', quote:'Bạn hoàn toàn hòa hợp với người mang CS ĐƯỜNG ĐỜI 3. 7+3=10, điều này có nghĩa là đi cùng nhau, chúng ta sẽ hoàn hảo. Bạn xây dựng và vạch ra kế hoạch mới, người mang số 3 chia sẻ, giao tiếp và ký hợp đồng. Liên minh lành mạnh.'},
+    {other:9, tag:'hoa-hop', quote:'Bạn và người mang CS Đường đời 9 có nhiều điểm chung về tâm linh. Bạn có thể khai mở luân xa, cùng nhau đặt cược vào những hướng đi mới. Bất cứ điều gì có một chút tinh thần là sẽ thành công trong mối quan hệ của các bạn.'},
+    {other:2, tag:'kho-khan', quote:'Với người mang CS Đường đời 2, bạn có thể gặp khó khăn vì bạn đang đối phó với người đang kháng cự một chút. Sau khi suy nghĩ, bạn muốn tiến lên phía trước còn số 2 thì do dự... điều này làm cho bạn hoảng loạn, chán nản, bạn thấy mình đi vào ngõ cụt.'},
+  ],
+  8: [
+    {other:2, tag:'hoa-hop', quote:'Bạn sẽ rất hợp với người mang CS Đường đời 2. Bạn là vật chất, mong muốn thành công trong công việc. Số 2 là đầu tư, là dự án đang được triển khai. Các bạn cùng xắn tay áo lên làm và sẽ thành công rực rỡ.'},
+    {other:8, tag:'hoa-hop', quote:'Bạn cũng hòa hợp với người mang CS Đường đời 8 như mình. Các bạn sẽ nhân đôi cơ hội thành công. Với năng lực của các bạn bỏ ra để đạt mục tiêu, thành công là rất xứng đáng.'},
+    {other:1, tag:'kho-khan', quote:'Một chút khó khăn, tế nhị, phức tạp trong mối quan hệ giữa bạn với người mang CS Đường đời 1 (8+1=9). Các bạn muốn bắt đầu một điều gì đó, nhưng chừng nào các bạn chưa giải quyết được quá khứ thì không thể tiến lên phía trước... mối quan hệ sẽ xây dựng trên sự ngờ vực và có thể trở nên bế tắc.'},
+  ],
+  9: [
+    {other:6, tag:'hoa-hop', quote:'Với người mang CS Đường đời 6, các bạn cùng mang ý tưởng, năng lượng và mong muốn của mình để thiết lập những dự án tuyệt đẹp. Khả năng tương thích là lý tưởng.'},
+    {other:4, tag:'kho-khan', quote:'Mối quan hệ phức tạp hơn với người mang CS Đường đời 4, với bạn, số 4 quá coi trọng vật chất, thích tiền, trong khi mục đích của bạn là chia sẻ vật chất. Có thể xảy ra xích mích, số 4 trách bạn thiếu thực tế... còn bạn trách số 4 quá tự cao tự đại và cơ hội.'},
+  ],
+};
+function lifePathCompatNotes(myValue, otherValue){
+  const entries = LIFE_PATH_COMPAT[myValue];
+  if (!entries) return [];
+  return entries.filter(e=>e.other===otherValue);
 }
 // Giữ lại 2 hàm dưới đây (chưa dùng ở tab Tương Hợp Đối Tác theo yêu cầu
 // của anh) vì đã xác nhận đủ nguồn — có thể tái dùng cho tab "Kết Hợp Chỉ
@@ -707,6 +844,7 @@ function renderTabs(){
     {key:'karmic', label:'Nghiệp & Nợ Nghiệp'},
     {key:'lifeStages', label:'Giai Đoạn & Đỉnh Cao'},
     {key:'charts', label:'Biểu Đồ / Mũi Tên'},
+    {key:'vowel', label:'🔤 Cá Tính Theo Tên'},
     {key:'combine', label:'🌉 Kết Hợp Chỉ Số'},
     {key:'partner', label:'🤝 Tương Hợp Đối Tác'},
     {key:'time', label:'🕒 Vận Theo Thời Gian'},
@@ -1053,6 +1191,30 @@ function renderCharts(r){
 }
 
 /* =========================================================
+   CÁ TÍNH THEO NGUYÊN ÂM ĐẦU TÊN — RENDER
+   ========================================================= */
+function renderVowelPersonality(name){
+  const box = document.getElementById('vowelCard');
+  if (!box) return;
+  const letter = firstVowelOfName(name);
+  let html = `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+    <h2 style="margin-bottom:0;">🔤 Cá Tính Theo Nguyên Âm Đầu Tên</h2>
+    <button class="btn-ghost no-print btn-export" onclick="exportPDF('vowel')">🖨️ Xuất PDF</button>
+  </div>`;
+  html += `<p class="muted" style="margin-bottom:16px;">Mục riêng trong tài liệu gốc: chữ NGUYÊN ÂM ĐẦU TIÊN trong tên (thường là tên gọi, không tính họ/đệm) hé lộ một phần tính cách dễ nhận thấy ở người đó — độc lập với các chỉ số con số ở trên. Quy tắc nhận diện nguyên âm (kể cả chữ Y) dùng đúng logic đã áp dụng khi tính Linh Hồn/Nhân Cách.</p>`;
+  if (!letter){
+    html += `<p class="muted">Không xác định được nguyên âm đầu tiên trong tên (họ tên trống hoặc không có nguyên âm).</p>`;
+  } else {
+    const text = VOWEL_PERSONALITY[letter];
+    html += `<div class="stage-row"><div class="stage-block"><div class="age">Nguyên âm đầu tiên</div><div class="num" style="font-size:1.6rem;">${letter}</div><div class="lbl">VD: ${VOWEL_PERSONALITY_EXAMPLE[letter]}</div></div></div>`;
+    html += `<details open><summary>Cá tính ứng với nguyên âm đầu "${letter}"</summary>
+      <div class="body">${text || 'Chưa có dữ liệu.'}</div></details>`;
+  }
+  html += `<p class="muted" style="font-size:0.75rem;margin:14px 0 4px;">Nguồn: trích nguyên văn 100% từ tài liệu Excel gốc của anh (mục "CÁ TÍNH CỦA TÊN NGƯỜI CÓ NGUYÊN ÂM ĐẦU TIÊN LÀ") — không do AI tự sáng tác.</p>`;
+  box.innerHTML = html;
+}
+
+/* =========================================================
    KẾT HỢP CHỈ SỐ — RENDER
    ========================================================= */
 function renderCombine(r){
@@ -1155,6 +1317,8 @@ function renderPartnerResult(rA, nameA, rB, nameB){
   const attSmall = rA.attitude.value >= rB.attitude.value ? rB.attitude.value : rA.attitude.value;
 
   let html = `<div class="grid2" style="margin:16px 0;">
+    <div class="ov-item" style="cursor:default;"><div class="v">${rA.lifePath.value}</div><div class="l">Đường Đời — ${nameA}</div></div>
+    <div class="ov-item" style="cursor:default;"><div class="v">${rB.lifePath.value}</div><div class="l">Đường Đời — ${nameB}</div></div>
     <div class="ov-item" style="cursor:default;"><div class="v">${rA.soul.value}</div><div class="l">Linh Hồn — ${nameA}</div></div>
     <div class="ov-item" style="cursor:default;"><div class="v">${rB.soul.value}</div><div class="l">Linh Hồn — ${nameB}</div></div>
     <div class="ov-item" style="cursor:default;"><div class="v">${rA.attitude.value}</div><div class="l">Thái Độ — ${nameA}</div></div>
@@ -1177,15 +1341,39 @@ function renderPartnerResult(rA, nameA, rB, nameB){
     <div class="body">${universalMeaningHTML(uniAttTension)}</div></details>`;
   html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 20px;">Nguồn: công thức tương tự Căng Thẳng Tâm Hồn, áp dụng cho chỉ số Thái Độ (theo xác nhận trực tiếp của anh). Ý nghĩa từng con số dùng lại đúng bộ "Ý nghĩa các con số" đã có trong Thư viện.</p>`;
 
+  // ----- Tương Hợp Đường Đời -----
+  const lpA = rA.lifePath.value, lpB = rB.lifePath.value;
+  const notesAtoB = lifePathCompatNotes(lpA, lpB);
+  const notesBtoA = lifePathCompatNotes(lpB, lpA);
+  const lpMasterInvolved = [11,22,33].includes(lpA) || [11,22,33].includes(lpB);
+  html += `<h3 style="margin:20px 0 10px;">Tương Hợp Đường Đời</h3>`;
+  html += `<p class="muted" style="margin-bottom:10px;">Tài liệu gốc, trong luận giải riêng của từng Đường Đời, có ghi chú Đường Đời đó hòa hợp/gặp khó khăn với những Đường Đời cụ thể nào — đây là góc nhìn theo TỪNG NGƯỜI (không phải ma trận đầy đủ 45 cặp), nên app tra theo cả 2 chiều và hiển thị trung thực những gì tài liệu có ghi.</p>`;
+  if (notesAtoB.length || notesBtoA.length){
+    if (notesAtoB.length) notesAtoB.forEach(n=>{
+      const cls = n.tag==='hoa-hop' ? 'ok-box' : 'karmic-box';
+      html += `<div class="${cls}" style="margin-bottom:10px;"><b>Theo luận giải Đường Đời ${lpA} (${nameA})${n.tag==='hoa-hop'?' — thuận lợi':' — cần lưu ý'} với Đường Đời ${lpB} (${nameB}):</b><br>${n.quote}</div>`;
+    });
+    if (notesBtoA.length) notesBtoA.forEach(n=>{
+      const cls = n.tag==='hoa-hop' ? 'ok-box' : 'karmic-box';
+      html += `<div class="${cls}" style="margin-bottom:10px;"><b>Theo luận giải Đường Đời ${lpB} (${nameB})${n.tag==='hoa-hop'?' — thuận lợi':' — cần lưu ý'} với Đường Đời ${lpA} (${nameA}):</b><br>${n.quote}</div>`;
+    });
+  } else if (lpMasterInvolved){
+    html += `<p class="muted"><i>Tài liệu gốc không có ghi chú tương thích riêng cho các Số Vua (11/22/33) — mục này chỉ có cho Đường Đời gốc 1-9, nên app không tự suy diễn thêm.</i></p>`;
+  } else {
+    html += `<p class="muted"><i>Tài liệu gốc không có ghi chú tương thích riêng cho cặp Đường Đời ${lpA} (${nameA}) và ${lpB} (${nameB}) cụ thể này (nội dung nguồn không đề cập đủ mọi cặp) — app không tự suy diễn thêm.</i></p>`;
+  }
+  html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 20px;">Nguồn: tài liệu Excel gốc của anh (luận giải riêng từng Đường Đời 1-9, các đoạn "hòa hợp/hòa thuận/mắc kẹt/căng thẳng với người mang CS Đường đời..."). Đã kiểm tra riêng mục Chủ Đạo — tài liệu KHÔNG có nội dung tương thích tương tự cho Chủ Đạo nên không đưa vào đây.</p>`;
+
   // ----- Tư Vấn Quan Hệ Đối Tác (tổng hợp) -----
   html += `<h3 style="margin:24px 0 10px;">Tư Vấn Quan Hệ Đối Tác (tổng hợp)</h3>`;
   html += `<div class="body" style="background:rgba(201,168,76,0.06);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
-    <p>Kết hợp cả 2 dữ kiện phía trên để cân nhắc hợp tác làm ăn giữa <b>${nameA}</b> và <b>${nameB}</b>:</p>
+    <p>Kết hợp các dữ kiện phía trên để cân nhắc hợp tác làm ăn giữa <b>${nameA}</b> và <b>${nameB}</b>:</p>
     <p style="margin-top:8px;">• <b>Căng Thẳng Tâm Hồn (${compat.soulTension})</b> — cho biết mức khác biệt về ĐỘNG LỰC/MONG MUỐN sâu bên trong của hai người khi cùng theo đuổi một mục tiêu chung.</p>
     <p style="margin-top:6px;">• <b>Căng Thẳng Thái Độ (${compat.attitudeTension})</b> — cho biết mức khác biệt trong CÁCH PHẢN ỨNG, ấn tượng ban đầu và cách tiếp cận công việc khi hai người mới làm việc cùng nhau.</p>
-    <p style="margin-top:10px;border-top:1px dashed var(--border);padding-top:10px;">Nên đọc kỹ đúng phần ý nghĩa cụ thể của 2 con số Căng Thẳng ở trên (đó là nội dung có căn cứ từ đúng bộ "Ý nghĩa các con số" trong Thư viện) để biết CỤ THỂ điểm cần lưu ý khi bất đồng xảy ra, thay vì chỉ nhìn vào con số — đây là nơi chỉ ra bản chất của khác biệt và cách dung hòa khi hợp tác lâu dài.</p>
+    <p style="margin-top:6px;">• <b>Tương Hợp Đường Đời</b> — ${(notesAtoB.length||notesBtoA.length) ? 'tài liệu gốc có ghi chú cụ thể cho cặp số này ở trên, nên đọc kỹ để biết đây là chiều thuận lợi hay cần lưu ý' : 'tài liệu gốc không có ghi chú riêng cho cặp Đường Đời này'}.</p>
+    <p style="margin-top:10px;border-top:1px dashed var(--border);padding-top:10px;">Nên đọc kỹ đúng phần ý nghĩa cụ thể của 2 con số Căng Thẳng và mục Tương Hợp Đường Đời ở trên (đều có căn cứ trực tiếp từ tài liệu) để biết CỤ THỂ điểm cần lưu ý khi bất đồng xảy ra, thay vì chỉ nhìn vào con số — đó là nơi chỉ ra bản chất của khác biệt và cách dung hòa khi hợp tác lâu dài.</p>
   </div>`;
-  html += `<p class="muted" style="font-size:0.72rem;margin-top:8px;"><i>* Đoạn tư vấn tổng hợp này do Claude viết kết nối từ 2 dữ kiện đã có căn cứ ở trên, KHÔNG phải trích nguyên văn từ Excel gốc — giữ đúng nguyên tắc minh bạch app đã áp dụng xuyên suốt.</i></p>`;
+  html += `<p class="muted" style="font-size:0.72rem;margin-top:8px;"><i>* Đoạn tư vấn tổng hợp này do Claude viết kết nối từ các dữ kiện đã có căn cứ ở trên, KHÔNG phải trích nguyên văn từ Excel gốc — giữ đúng nguyên tắc minh bạch app đã áp dụng xuyên suốt.</i></p>`;
 
   box.innerHTML = html;
 }
@@ -1378,6 +1566,7 @@ function printTabLabel(key){
     karmic:'Nghiệp & Nợ Nghiệp',
     lifeStages:'Giai Đoạn & Đỉnh Cao',
     charts:'Biểu Đồ / Mũi Tên',
+    vowel:'Cá Tính Theo Nguyên Âm Đầu Tên',
     combine:'Kết Hợp Chỉ Số',
     partner:'Tương Hợp Đối Tác',
     time:'Vận Theo Thời Gian',
@@ -1405,7 +1594,7 @@ function exportPDF(key){
     document.querySelectorAll('.section').forEach(s=>{
       if (s.dataset.key !== 'time' && s.dataset.key !== 'partner') s.classList.add('print-target');
     });
-    scopeLabel = 'Toàn bộ báo cáo (8 chỉ số cốt lõi, Nghiệp &amp; Nợ Nghiệp, Giai Đoạn &amp; Đỉnh Cao, Biểu Đồ, Kết Hợp Chỉ Số, Bản Tổng Hợp)';
+    scopeLabel = 'Toàn bộ báo cáo (8 chỉ số cốt lõi, Nghiệp &amp; Nợ Nghiệp, Giai Đoạn &amp; Đỉnh Cao, Biểu Đồ, Cá Tính Theo Tên, Kết Hợp Chỉ Số, Bản Tổng Hợp)';
   } else {
     const target = document.querySelector('.section[data-key="'+key+'"]');
     if (target) target.classList.add('print-target');
@@ -1523,6 +1712,7 @@ document.getElementById('calcBtn').addEventListener('click', ()=>{
   renderKarmic(r);
   renderLifeStages(r);
   renderCharts(r);
+  renderVowelPersonality(name);
   renderCombine(r);
   renderSummaryReport(r, name);
   document.getElementById('resultsWrap').classList.remove('hidden');
