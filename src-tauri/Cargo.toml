@@ -1,5 +1,5 @@
 [package]
-name = "tnt-nhan-so-hoc-app"
+name = "tt-nhan-so-hoc-app"
 version = "1.9.0"
 description = "T&T Nhân Số Học App — Giải Mã Năng Lượng Số (T&T Hoàng Gia Royal)"
 authors = ["T&T Hoàng Gia Royal"]
@@ -11,7 +11,7 @@ edition = "2021"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "tnt_nhan_so_hoc_app_lib"
+name = "tt_nhan_so_hoc_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

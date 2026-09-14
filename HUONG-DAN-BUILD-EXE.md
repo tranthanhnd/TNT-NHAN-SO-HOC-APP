@@ -5,7 +5,7 @@ Khung dự án này em đã chuẩn bị sẵn và **kiểm thử thật** (buil
 ## Cấu trúc thư mục (đã có sẵn trong file zip)
 
 ```
-TNT-NHAN-SO-HOC-APP/
+TT-NHAN-SO-HOC-APP/
 ├── dist/
 │   └── index.html          ← chính là app V1.9 (bản đầy đủ, đã nhúng logo)
 ├── src-tauri/
@@ -21,13 +21,13 @@ TNT-NHAN-SO-HOC-APP/
 ## Bước 1 — Tạo repo GitHub mới
 
 1. Đăng nhập GitHub (tài khoản anh vẫn dùng cho Gia Phả Việt).
-2. Tạo repo mới, đặt tên ví dụ: `TNT-NHAN-SO-HOC-APP` — chọn **Private**.
+2. Tạo repo mới, đặt tên ví dụ: `TT-NHAN-SO-HOC-APP` — chọn **Private**.
 3. **Không** tick tạo sẵn README/gitignore (để trống, mình sẽ đẩy code có sẵn lên).
 
 ## Bước 2 — Đưa code vào máy qua GitHub Desktop
 
 1. Mở GitHub Desktop → File → Clone repository → chọn đúng repo vừa tạo.
-2. Chọn nơi lưu **ngoài OneDrive** (ví dụ `C:\GIAPHAVIET\TNT-NHAN-SO-HOC-APP` hoặc thư mục tương tự) — bài học từ lần làm Gia Phả Việt: để trong OneDrive dễ bị lỗi Git không nhận diện thay đổi file.
+2. Chọn nơi lưu **ngoài OneDrive** (ví dụ `C:\GIAPHAVIET\TT-NHAN-SO-HOC-APP` hoặc thư mục tương tự) — bài học từ lần làm Gia Phả Việt: để trong OneDrive dễ bị lỗi Git không nhận diện thay đổi file.
 3. Giải nén toàn bộ nội dung file zip anh nhận vào đúng thư mục vừa clone (đè lên, giữ nguyên cấu trúc thư mục).
 
 ## Bước 3 — Bật quyền cho GitHub Actions

@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    tnt_nhan_so_hoc_app_lib::run()
+    tt_nhan_so_hoc_app_lib::run()
 }
