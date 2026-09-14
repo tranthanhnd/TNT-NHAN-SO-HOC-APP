@@ -218,7 +218,7 @@
     <div class="grid2">
       <div class="field">
         <label for="birthDate">Ngày tháng năm sinh (dương lịch)</label>
-        <input class="input" id="birthDate" type="date">
+        <input class="input date-mask" id="birthDate" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" autocomplete="off">
       </div>
       <div class="field" style="display:flex;align-items:flex-end;">
         <button class="btn" id="calcBtn">Giải mã Nhân Số Học</button>
@@ -254,7 +254,7 @@
       <div class="datebar">
         <div class="field">
           <label for="checkDate">Ngày cần xem</label>
-          <input class="input" id="checkDate" type="date">
+          <input class="input date-mask" id="checkDate" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" autocomplete="off">
         </div>
         <button class="btn-ghost today-btn" id="todayBtn">Hôm nay</button>
       </div>
@@ -1057,12 +1057,7 @@ function buildPrintHeader(scopeLabel){
   const el = document.getElementById('printHeader');
   if (!el) return;
   const nameVal = currentName || document.getElementById('fullName').value.trim();
-  const dobVal = document.getElementById('birthDate').value;
-  let dobFmt = '';
-  if (dobVal){
-    const [y,m,d] = dobVal.split('-');
-    dobFmt = `${d}/${m}/${y}`;
-  }
+  const dobFmt = document.getElementById('birthDate').value.trim();
   const todayFmt = new Date().toLocaleDateString('vi-VN');
   el.innerHTML = `
     <div class="brand">T&amp;T HOÀNG GIA ROYAL — Báo Cáo Nhân Số Học Pythagoras</div>
@@ -1125,24 +1120,64 @@ window.addEventListener('afterprint', ()=>{
 /* =========================================================
    EVENTS
    ========================================================= */
-function parseDateInput(val){
-  // val: "YYYY-MM-DD"
-  const [y,m,d] = val.split('-').map(Number);
-  return {y,m,d};
+/* ---------------------------------------------------------
+   Ô nhập ngày dạng chữ tự định dạng dd/mm/yyyy do app tự kiểm
+   soát (KHÔNG dùng <input type="date"> gốc của trình duyệt):
+   né xung đột đã ghi nhận giữa các bộ gõ tiếng Việt kiểu
+   Unikey/EVKey (chặn phím ở tầng hệ điều hành, kể cả khi gõ số)
+   với cơ chế tự nhảy khối ngày/tháng/năm của ô date gốc, vốn
+   hay làm sai lệch/nhảy số khi bộ gõ tiếng Việt đang bật.
+   --------------------------------------------------------- */
+function attachDateMask(id, onComplete){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', ()=>{
+    const digits = el.value.replace(/\D/g,'').slice(0,8);
+    let out = digits;
+    if (digits.length > 4) out = digits.slice(0,2)+'/'+digits.slice(2,4)+'/'+digits.slice(4);
+    else if (digits.length > 2) out = digits.slice(0,2)+'/'+digits.slice(2);
+    el.value = out;
+    if (onComplete && digits.length === 8){
+      const parsed = readMaskedDate(id);
+      if (parsed.ok) onComplete(parsed);
+    }
+  });
 }
+function readMaskedDate(id){
+  // Trả {ok:false} nếu chưa nhập đủ/không hợp lệ, {ok:true,d,m,y} nếu hợp lệ
+  const val = (document.getElementById(id).value || '').trim();
+  const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return {ok:false};
+  const d = Number(match[1]), m = Number(match[2]), y = Number(match[3]);
+  if (m < 1 || m > 12) return {ok:false};
+  if (y < 1000 || y > 9999) return {ok:false};
+  const daysInMonth = new Date(y, m, 0).getDate();
+  if (d < 1 || d > daysInMonth) return {ok:false};
+  return {ok:true, d, m, y};
+}
+function setMaskedDate(id, d, m, y){
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById(id).value = `${pad(d)}/${pad(m)}/${y}`;
+}
+attachDateMask('birthDate');
+attachDateMask('checkDate', (parsed)=>{
+  renderTimeResults(new Date(parsed.y, parsed.m-1, parsed.d));
+});
 
 document.getElementById('calcBtn').addEventListener('click', ()=>{
   const name = document.getElementById('fullName').value.trim();
-  const dateVal = document.getElementById('birthDate').value;
+  const dateVal = document.getElementById('birthDate').value.trim();
   const errEl = document.getElementById('errorMsg');
   errEl.style.display='none';
 
   if (!name){ errEl.textContent='Vui lòng nhập họ và tên.'; errEl.style.display='block'; return; }
-  if (!dateVal){ errEl.textContent='Vui lòng chọn ngày sinh.'; errEl.style.display='block'; return; }
+  if (!dateVal){ errEl.textContent='Vui lòng nhập ngày sinh (dd/mm/yyyy).'; errEl.style.display='block'; return; }
   const clean = stripVietnamese(name).replace(/[^A-Z\s]/g,'');
   if (!clean.trim()){ errEl.textContent='Họ tên không hợp lệ.'; errEl.style.display='block'; return; }
 
-  const {y,m,d} = parseDateInput(dateVal);
+  const parsed = readMaskedDate('birthDate');
+  if (!parsed.ok){ errEl.textContent='Ngày sinh không hợp lệ. Vui lòng nhập đúng định dạng dd/mm/yyyy (VD: 30/09/1958).'; errEl.style.display='block'; return; }
+  const {d,m,y} = parsed;
   const r = fullCalculate(name, d, m, y);
   currentResult = r; currentName = name;
   birthDay = d; birthMonth = m;
@@ -1157,30 +1192,29 @@ document.getElementById('calcBtn').addEventListener('click', ()=>{
   renderSummaryReport(r, name);
   document.getElementById('resultsWrap').classList.remove('hidden');
 
-  const today = document.getElementById('checkDate');
-  if (!today.value){
+  const checkParsed = readMaskedDate('checkDate');
+  let checkDateObj;
+  if (checkParsed.ok){
+    checkDateObj = new Date(checkParsed.y, checkParsed.m-1, checkParsed.d);
+  } else {
     const t = new Date();
-    today.value = t.toISOString().slice(0,10);
+    setMaskedDate('checkDate', t.getDate(), t.getMonth()+1, t.getFullYear());
+    checkDateObj = t;
   }
-  renderTimeResults(new Date(today.value+'T00:00:00'));
+  renderTimeResults(checkDateObj);
   document.getElementById('resultsWrap').scrollIntoView({behavior:'smooth'});
 });
 
-document.getElementById('checkDate').addEventListener('change', (e)=>{
-  if (!e.target.value) return;
-  renderTimeResults(new Date(e.target.value+'T00:00:00'));
-});
 document.getElementById('todayBtn').addEventListener('click', ()=>{
   const t = new Date();
-  const val = t.toISOString().slice(0,10);
-  document.getElementById('checkDate').value = val;
+  setMaskedDate('checkDate', t.getDate(), t.getMonth()+1, t.getFullYear());
   renderTimeResults(t);
 });
 
 // set default check date to today on load
 (function(){
   const t = new Date();
-  document.getElementById('checkDate').value = t.toISOString().slice(0,10);
+  setMaskedDate('checkDate', t.getDate(), t.getMonth()+1, t.getFullYear());
 })();
 </script>
 </body>
