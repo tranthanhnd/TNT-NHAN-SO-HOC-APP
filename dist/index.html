@@ -414,29 +414,29 @@ function computeMaturity(lifePathValue, destinyValue){
   return {value: reduceKeepMaster(raw), raw};
 }
 /* =========================================================
-   TƯƠNG HỢP ĐỐI TÁC (2 người) — Con Số Căng Thẳng (Tâm Hồn &
-   Thái Độ) và Các Tổ Hợp. Nguồn: đúng tài liệu Excel gốc của anh
-   (ảnh chụp trực tiếp từ sheet, dòng "3b. CON SỐ CĂNG THẲNG TÂM
-   HỒN" và "CÁC TỔ HỢP"; phần Căng Thẳng Thái Độ do anh xác nhận
-   trực tiếp trong hội thoại — dùng ĐÚNG công thức tương tự đã có
-   cho Căng Thẳng Tâm Hồn: lấy số lớn trừ số nhỏ). LƯU Ý MINH BẠCH:
-   đoạn "CÁC TỔ HỢP" trong ảnh chụp bị cắt ở câu "Kiểm tra các số
-   của bạn trong những tổ hợp:" — có thể còn 1 bảng/danh sách chi
-   tiết hơn ở ngay sau đó trong Excel mà em chưa nhìn thấy. Phần
-   triển khai dưới đây chỉ dùng ĐÚNG những gì đã đọc được (3 nhóm
-   số, cách xác định nhóm qua Ngày Sinh/Đường Đời, ý nghĩa khi
-   trùng/lệch nhóm) — nếu anh gửi thêm phần bị cắt, em sẽ bổ sung.
+   TƯƠNG HỢP ĐỐI TÁC (2 người) — Con Số Căng Thẳng Tâm Hồn & Con
+   Số Căng Thẳng Thái Độ. Nguồn: ĐÃ ĐỌC TRỰC TIẾP đúng file Excel
+   gốc "3. Tai Lieu GIAI MA NHAN SO HOC.xlsx" (sheet "Bao cao Mau",
+   ô A20 mục "3b. CON SỐ CĂNG THẲNG TÂM HỒN" và ô A27 mục "7b. Con
+   số Căng thẳng Thái độ") — không còn dựa trên ảnh chụp cắt nữa,
+   đã xác nhận đủ, không thiếu. Theo yêu cầu của anh, tab này CHỈ
+   tính Thái Độ & Linh Hồn của người thứ 2 để so sánh — chủ động
+   BỎ QUA "Các Tổ Hợp" (mục dùng Đường Đời/Ngày Sinh, cũng có sẵn
+   nguyên văn đầy đủ trong file — kể cả bảng 3 tên tổ hợp: Tâm Trí
+   1-5-7, Tư Duy Kinh Doanh 2-4-8, Sáng Tạo 3-6-9 — nhưng chưa dùng
+   ở đây, để dành nếu sau này cần cho tab "Kết Hợp Chỉ Số" 1 người).
    Câu "tư vấn quan hệ đối tác" tổng hợp cuối mục do Claude viết
-   kết nối từ 3 dữ kiện đã có căn cứ (2 số Căng Thẳng + Tổ Hợp),
-   không phải trích nguyên văn từ Excel — có ghi chú rõ trong app.
+   kết nối từ 2 số Căng Thẳng đã có căn cứ, không phải trích nguyên
+   văn từ Excel — có ghi chú rõ trong app.
    ========================================================= */
 function pairTension(a, b){
   return Math.abs(a - b);
 }
+// Giữ lại 2 hàm dưới đây (chưa dùng ở tab Tương Hợp Đối Tác theo yêu cầu
+// của anh) vì đã xác nhận đủ nguồn — có thể tái dùng cho tab "Kết Hợp Chỉ
+// Số" (1 người) sau này nếu anh muốn thêm mục "Tổ Hợp cá nhân".
 const TRIADS = [[1,5,7],[2,4,8],[3,6,9]];
 function triadGroupOf(value){
-  // Tổ hợp dùng dạng rút gọn hoàn toàn về 1 chữ số (kể cả nếu value là số Vua
-  // 11/22, vì 3 nhóm tổ hợp chỉ gồm các chữ số 1-9) — nguồn không nói khác.
   const base = value>9 ? reduceFull(value) : value;
   for (let i=0;i<TRIADS.length;i++) if (TRIADS[i].includes(base)) return i;
   return -1;
@@ -450,10 +450,7 @@ function personTriads(lifePathValue, birthdayValue){
 function computeCompat(rA, rB){
   const soulTension = pairTension(rA.soul.value, rB.soul.value);
   const attitudeTension = pairTension(rA.attitude.value, rB.attitude.value);
-  const triadsA = personTriads(rA.lifePath.value, rA.birthday.value);
-  const triadsB = personTriads(rB.lifePath.value, rB.birthday.value);
-  const overlap = triadsA.groups.filter(g=>triadsB.groups.includes(g));
-  return {soulTension, attitudeTension, triadsA, triadsB, overlap};
+  return {soulTension, attitudeTension};
 }
 function missingNumbers(seq){
   const present = new Set(seq.map(s=>letterValue(s.ch)));
@@ -1158,14 +1155,10 @@ function renderPartnerResult(rA, nameA, rB, nameB){
   const attSmall = rA.attitude.value >= rB.attitude.value ? rB.attitude.value : rA.attitude.value;
 
   let html = `<div class="grid2" style="margin:16px 0;">
-    <div class="ov-item" style="cursor:default;"><div class="v">${rA.lifePath.value}</div><div class="l">Đường Đời — ${nameA}</div></div>
-    <div class="ov-item" style="cursor:default;"><div class="v">${rB.lifePath.value}</div><div class="l">Đường Đời — ${nameB}</div></div>
     <div class="ov-item" style="cursor:default;"><div class="v">${rA.soul.value}</div><div class="l">Linh Hồn — ${nameA}</div></div>
     <div class="ov-item" style="cursor:default;"><div class="v">${rB.soul.value}</div><div class="l">Linh Hồn — ${nameB}</div></div>
     <div class="ov-item" style="cursor:default;"><div class="v">${rA.attitude.value}</div><div class="l">Thái Độ — ${nameA}</div></div>
     <div class="ov-item" style="cursor:default;"><div class="v">${rB.attitude.value}</div><div class="l">Thái Độ — ${nameB}</div></div>
-    <div class="ov-item" style="cursor:default;"><div class="v">${rA.birthday.value}</div><div class="l">Ngày Sinh — ${nameA}</div></div>
-    <div class="ov-item" style="cursor:default;"><div class="v">${rB.birthday.value}</div><div class="l">Ngày Sinh — ${nameB}</div></div>
   </div>`;
 
   // ----- Con Số Căng Thẳng Tâm Hồn -----
@@ -1184,39 +1177,15 @@ function renderPartnerResult(rA, nameA, rB, nameB){
     <div class="body">${universalMeaningHTML(uniAttTension)}</div></details>`;
   html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 20px;">Nguồn: công thức tương tự Căng Thẳng Tâm Hồn, áp dụng cho chỉ số Thái Độ (theo xác nhận trực tiếp của anh). Ý nghĩa từng con số dùng lại đúng bộ "Ý nghĩa các con số" đã có trong Thư viện.</p>`;
 
-  // ----- Các Tổ Hợp -----
-  html += `<h3 style="margin:20px 0 10px;">Các Tổ Hợp</h3>`;
-  html += `<p class="muted" style="margin-bottom:10px;">3 nhóm số hợp nhau tự nhiên: <b>(1, 5, 7)</b> · <b>(2, 4, 8)</b> · <b>(3, 6, 9)</b>. Tổ hợp của mỗi người xác định qua Đường Đời và Ngày Sinh (đã rút gọn) — nếu 2 chỉ số này rơi vào 2 nhóm khác nhau, người đó có 2 tổ hợp.</p>`;
-  html += `<div class="grid2" style="margin-bottom:14px;">
-    <div class="ov-item" style="cursor:default;"><div class="v" style="font-size:1.1rem;">${triadLabel(compat.triadsA.lifePathGroup)}${!compat.triadsA.single ? ' / '+triadLabel(compat.triadsA.birthdayGroup) : ''}</div><div class="l">Tổ hợp của ${nameA}</div></div>
-    <div class="ov-item" style="cursor:default;"><div class="v" style="font-size:1.1rem;">${triadLabel(compat.triadsB.lifePathGroup)}${!compat.triadsB.single ? ' / '+triadLabel(compat.triadsB.birthdayGroup) : ''}</div><div class="l">Tổ hợp của ${nameB}</div></div>
-  </div>`;
-  if (compat.overlap.length){
-    html += `<div class="ok-box">${nameA} và ${nameB} có chung tổ hợp ${compat.overlap.map(g=>triadLabel(g)).join(', ')} — theo tài liệu gốc, đây là dấu hiệu 2 người dễ thấu hiểu và gắn kết tự nhiên, thuận lợi khi hợp tác làm ăn hoặc gắn bó lâu dài.</div>`;
-  } else {
-    html += `<div class="karmic-box">${nameA} và ${nameB} KHÔNG có chung tổ hợp nào — theo tài liệu gốc, điều này không có nghĩa là xung khắc, nhưng 2 người có thể cần chủ động tìm hiểu nhau nhiều hơn để hòa hợp, vì không có sẵn sự "thấu hiểu tự nhiên" mà tổ hợp chung mang lại.</div>`;
-  }
-  if (!compat.triadsA.single){
-    html += `<p class="muted" style="font-size:0.78rem;margin-top:10px;"><i>Riêng ${nameA}: Ngày Sinh và Đường Đời rơi vào 2 tổ hợp khác nhau — theo tài liệu gốc, người thuộc trường hợp này "không phải lúc nào cũng biết mình muốn gì", nên cân nhắc cả 2 tổ hợp khi xét tương hợp.</i></p>`;
-  }
-  if (!compat.triadsB.single){
-    html += `<p class="muted" style="font-size:0.78rem;margin-top:6px;"><i>Riêng ${nameB}: Ngày Sinh và Đường Đời rơi vào 2 tổ hợp khác nhau, tương tự lưu ý trên.</i></p>`;
-  }
-  html += `<p class="muted" style="font-size:0.75rem;margin-top:14px;">Nguồn: tài liệu Excel gốc của anh (mục "Các Tổ Hợp"). <b>Lưu ý minh bạch:</b> đoạn gốc trong Excel dừng ở câu "Kiểm tra các số của bạn trong những tổ hợp:" — có thể còn bảng/danh sách chi tiết hơn ngay sau đó mà em chưa xem được trong ảnh chụp. Nếu anh có đầy đủ phần này, gửi thêm để em hoàn thiện chính xác hơn.</p>`;
-
   // ----- Tư Vấn Quan Hệ Đối Tác (tổng hợp) -----
   html += `<h3 style="margin:24px 0 10px;">Tư Vấn Quan Hệ Đối Tác (tổng hợp)</h3>`;
-  const triadNote = compat.overlap.length
-    ? `2 bên có chung tổ hợp số tự nhiên — nền tảng thuận lợi để thấu hiểu nhau ngay từ đầu`
-    : `2 bên KHÔNG có chung tổ hợp số tự nhiên nào — sự thấu hiểu ban đầu sẽ không đến một cách tự động, cần chủ động tìm hiểu nhau nhiều hơn`;
   html += `<div class="body" style="background:rgba(201,168,76,0.06);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
-    <p>Kết hợp cả 3 dữ kiện phía trên để cân nhắc hợp tác làm ăn giữa <b>${nameA}</b> và <b>${nameB}</b>:</p>
+    <p>Kết hợp cả 2 dữ kiện phía trên để cân nhắc hợp tác làm ăn giữa <b>${nameA}</b> và <b>${nameB}</b>:</p>
     <p style="margin-top:8px;">• <b>Căng Thẳng Tâm Hồn (${compat.soulTension})</b> — cho biết mức khác biệt về ĐỘNG LỰC/MONG MUỐN sâu bên trong của hai người khi cùng theo đuổi một mục tiêu chung.</p>
     <p style="margin-top:6px;">• <b>Căng Thẳng Thái Độ (${compat.attitudeTension})</b> — cho biết mức khác biệt trong CÁCH PHẢN ỨNG, ấn tượng ban đầu và cách tiếp cận công việc khi hai người mới làm việc cùng nhau.</p>
-    <p style="margin-top:6px;">• <b>Tổ Hợp</b> — ${triadNote}.</p>
-    <p style="margin-top:10px;border-top:1px dashed var(--border);padding-top:10px;">Nên đọc kỹ đúng phần ý nghĩa cụ thể của 2 con số Căng Thẳng ở trên (đó là nội dung có căn cứ từ đúng bộ "Ý nghĩa các con số" trong Thư viện) để biết CỤ THỂ điểm cần lưu ý khi bất đồng xảy ra, thay vì chỉ nhìn vào con số. Tổ Hợp cho biết mức độ "hợp cạ" tự nhiên ban đầu; 2 chỉ số Căng Thẳng mới là nơi chỉ ra bản chất của khác biệt và cách dung hòa khi hợp tác lâu dài.</p>
+    <p style="margin-top:10px;border-top:1px dashed var(--border);padding-top:10px;">Nên đọc kỹ đúng phần ý nghĩa cụ thể của 2 con số Căng Thẳng ở trên (đó là nội dung có căn cứ từ đúng bộ "Ý nghĩa các con số" trong Thư viện) để biết CỤ THỂ điểm cần lưu ý khi bất đồng xảy ra, thay vì chỉ nhìn vào con số — đây là nơi chỉ ra bản chất của khác biệt và cách dung hòa khi hợp tác lâu dài.</p>
   </div>`;
-  html += `<p class="muted" style="font-size:0.72rem;margin-top:8px;"><i>* Đoạn tư vấn tổng hợp này do Claude viết kết nối từ 3 dữ kiện đã có căn cứ ở trên, KHÔNG phải trích nguyên văn từ Excel gốc — giữ đúng nguyên tắc minh bạch app đã áp dụng xuyên suốt.</i></p>`;
+  html += `<p class="muted" style="font-size:0.72rem;margin-top:8px;"><i>* Đoạn tư vấn tổng hợp này do Claude viết kết nối từ 2 dữ kiện đã có căn cứ ở trên, KHÔNG phải trích nguyên văn từ Excel gốc — giữ đúng nguyên tắc minh bạch app đã áp dụng xuyên suốt.</i></p>`;
 
   box.innerHTML = html;
 }
