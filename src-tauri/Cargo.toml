@@ -1,6 +1,6 @@
 [package]
 name = "tt-nhan-so-hoc-app"
-version = "1.10.0"
+version = "1.11.0"
 description = "T&T Nhân Số Học App — Giải Mã Năng Lượng Số (T&T Hoàng Gia Royal)"
 authors = ["T&T Hoàng Gia Royal"]
 edition = "2021"

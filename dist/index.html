@@ -176,7 +176,8 @@
     .section[data-key="karmic"]{order:2;}
     .section[data-key="lifeStages"]{order:3;}
     .section[data-key="charts"]{order:4;}
-    .section[data-key="summary"]{order:5;}
+    .section[data-key="combine"]{order:5;}
+    .section[data-key="summary"]{order:6;}
     .card{background:#fff !important;border:1px solid #999 !important;box-shadow:none !important;color:#141414 !important;backdrop-filter:none !important;page-break-inside:avoid;}
     h1,h2,h3{color:#7a5a12 !important;}
     p,div,span,li,.formula{color:#141414 !important;}
@@ -245,7 +246,9 @@
 
     <div class="section card" id="chartsCard" data-key="charts"></div>
 
-    <div class="section card" id="timeCard" data-key="time">
+    <div class="section card" id="combineCard" data-key="combine"></div>
+
+    <div class="section card" id="timeCard" data-key="time"
       <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         <h2 style="margin-bottom:0;">🕒 Vận theo thời gian — Năm / Tháng / Ngày Cá Nhân</h2>
         <button class="btn-ghost no-print btn-export" onclick="exportPDF('time')">🖨️ Xuất PDF</button>
@@ -264,7 +267,7 @@
   </div>
 
   <p class="footer-note">
-    T&T Hoàng Gia Royal · Nội dung luận giải ở từng chỉ số riêng lẻ trích nguyên văn 100% từ tài liệu Thần Số Học đã được sưu tầm &amp; biên soạn — không do AI tự sáng tác. Riêng tab "📋 Tổng Hợp" là bản chắt lọc có phần câu dẫn do Claude biên soạn (xem ghi chú đầu tab đó).<br>
+    T&T Hoàng Gia Royal · Nội dung luận giải ở từng chỉ số riêng lẻ trích nguyên văn 100% từ tài liệu Thần Số Học đã được sưu tầm &amp; biên soạn — không do AI tự sáng tác. Riêng tab "🌉 Kết Hợp Chỉ Số" dùng thêm tư liệu tham khảo quốc tế (Hans Decoz, Matthew Goodwin) và tab "📋 Tổng Hợp" là bản chắt lọc có phần câu dẫn do Claude biên soạn — cả hai đều soạn sẵn lúc build app, không gọi AI lúc chạy (xem ghi chú đầu mỗi tab).<br>
     Đây là công cụ tham khảo mang tính định hướng, không thay thế các quyết định quan trọng trong cuộc sống.
   </p>
 
@@ -452,6 +455,65 @@ function computeGiaiDoanDinhCao(day, month, year, lifePathValue){
   };
 }
 
+/* =========================================================
+   KẾT HỢP CHỈ SỐ — Số Thử Thách & Số Cầu Nối
+   Nguồn: Hans Decoz, World Numerology (worldnumerology.com) —
+   Xem đầy đủ nghiên cứu & trích dẫn trong tài liệu "4. Tài Liệu
+   Tham Khảo Bổ Sung — Kỹ thuật kết hợp nhiều chỉ số" (Thư viện).
+   ĐÂY LÀ NỘI DUNG NGOÀI FILE EXCEL GỐC, soạn sẵn lúc build app —
+   không gọi AI/API lúc người dùng bấm "Giải mã" (giống nguyên tắc
+   đã áp dụng ở tab "📋 Tổng Hợp").
+   ========================================================= */
+const CHALLENGE_CONTENT = {
+  '0': "Tăng trưởng không gặp trở ngại nghiêm trọng; thử thách là giữ vững lý tưởng cao đẹp và đóng góp cho nhân loại; cơ hội thường đến trong lĩnh vực ngoại giao, pháp luật.",
+  '1': "Đòi hỏi học cách độc lập, bảo vệ chính kiến của bản thân; cần củng cố và hiểu rõ ý chí của chính mình, phát triển tư duy độc lập, nguyên bản.",
+  '2': "Quá nhạy cảm, quá bận tâm đến kỳ vọng của người khác dẫn đến tự kìm nén bản thân; dễ rơi vào nỗi sợ hãi và xáo trộn cảm xúc không cần thiết, cần xây dựng nội lực.",
+  '3': "Tự phê phán bản thân quá mức làm thui chột sự sáng tạo; tự kìm nén cá tính và khả năng sáng tạo vì phán xét bản thân khắt khe và sợ giao tiếp xã hội.",
+  '4': "Thiếu tổ chức, thiếu thực tế chiếm ưu thế; cần học cách phân biệt giữa việc chắc chắn khả thi và việc chỉ là ảo tưởng — tức xây dựng kỷ luật và sự kiên trì.",
+  '5': "Nguy cơ trở thành \"hòn đá lăn\" do khao khát tự do quá mức; cần đề phòng buông thả bản thân, học cách cam kết với các mối quan hệ và dự án đang theo đuổi.",
+  '6': "Lý tưởng hóa méo mó tạo ra sự bất mãn; lý tưởng đặt ra cao đến mức phi thực tế, khiến cuộc sống trở nên khó khăn cho bản thân và người xung quanh, cản trở lòng biết ơn.",
+  '7': "Hoài nghi quá mức cản trở sự phát triển tâm linh/nội tâm; khó chấp nhận niềm tin, dễ kìm nén nhiều xu hướng tự nhiên vì chúng không phù hợp với tư duy lý trí của bản thân.",
+  '8': "Tiền bạc và quyền lực trở thành ưu tiên quá mức; có nguy cơ trở nên ám ảnh với chủ nghĩa vật chất đến mức ranh giới đạo đức có thể bị xâm phạm.",
+};
+const CHALLENGE_SOURCE = 'Hans Decoz, World Numerology (worldnumerology.com/numerology-challenges)';
+const BRIDGE_SOURCE = 'Hans Decoz, World Numerology (worldnumerology.com/numerology-bridge-numbers)';
+const BRIDGE_DEFS = [
+  {key:'ddsm', labelA:'Đường Đời', labelB:'Sứ Mệnh', a:'lifePath', b:'destiny', note:'Dung hòa giữa hướng đi cuộc đời (Đường Đời) và cách thể hiện ra bên ngoài / con đường sự nghiệp (Sứ Mệnh).'},
+  {key:'lhsm', labelA:'Linh Hồn', labelB:'Sứ Mệnh', a:'soul', b:'destiny', note:'Dung hòa giữa động lực/khao khát nội tâm (Linh Hồn) và con đường thể hiện ra hành động (Sứ Mệnh).'},
+  {key:'ddns', labelA:'Đường Đời', labelB:'Ngày Sinh', a:'lifePath', b:'birthday', note:'Dung hòa giữa hướng đi lớn của cuộc đời (Đường Đời) và tài năng/dấu ấn riêng bẩm sinh (Ngày Sinh).'},
+];
+function computeBridgeChallenge(day, month, year, parts){
+  // ---- Số Thử Thách (Challenge Numbers) ----
+  // Rút gọn HOÀN TOÀN tháng/ngày/năm về 1 chữ số (kể cả số Vua),
+  // đúng công thức Decoz — khác quy ước "giữ số Vua" dùng cho Đường Đời.
+  const mR = reduceFull(month);
+  const dR = reduceFull(day);
+  const yR = wyn(year);
+  const c1 = Math.abs(mR - dR);
+  const c2 = Math.abs(dR - yR);
+  const c3 = Math.abs(c1 - c2);
+  const c4 = Math.abs(mR - yR);
+  const challenges = [
+    {n:1, value:c1, period:'Từ lúc sinh đến khoảng 30–35 tuổi'},
+    {n:2, value:c2, period:'Khoảng 35 đến 55–60 tuổi'},
+    {n:3, value:c3, period:'Ảnh hưởng xuyên suốt cả đời (Thử Thách Chính)'},
+    {n:4, value:c4, period:'Từ khoảng 55–60 tuổi trở đi'},
+  ];
+
+  // ---- Số Cầu Nối (Bridge Numbers) ----
+  // Quy ước: nếu 1 trong 2 chỉ số nguồn là số Vua (11/22/33), rút gọn
+  // về 1 chữ số trước khi trừ — dùng lại đúng nguyên tắc rút gọn Decoz
+  // áp dụng cho Số Thử Thách, vì tài liệu gốc không mô tả riêng trường
+  // hợp số Vua cho Cầu Nối (không tự đặt ra quy tắc mới).
+  const bridges = BRIDGE_DEFS.map(def=>{
+    const va = parts[def.a].value, vb = parts[def.b].value;
+    const vaR = reduceFull(va), vbR = reduceFull(vb);
+    return {...def, va, vb, value: Math.abs(vaR - vbR)};
+  });
+
+  return {challenges, bridges};
+}
+
 function fullCalculate(fullName, day, month, year){
   const seq = nameToLetterSequence(fullName);
   const lifePath = computeLifePath(day,month,year);
@@ -472,7 +534,8 @@ function fullCalculate(fullName, day, month, year){
   ]);
   const lifeStages = computeGiaiDoanDinhCao(day, month, year, lifePath.value);
   const charts = computeCharts(day, month, year, seq);
-  return {lifePath, chuDao, destiny, soul, personality, birthday, attitude, maturity, missing, karmic, lifeStages, charts};
+  const combine = computeBridgeChallenge(day, month, year, {lifePath, destiny, soul, personality, birthday});
+  return {lifePath, chuDao, destiny, soul, personality, birthday, attitude, maturity, missing, karmic, lifeStages, charts, combine};
 }
 
 /* =========================================================
@@ -546,6 +609,7 @@ function renderTabs(){
     {key:'karmic', label:'Nghiệp & Nợ Nghiệp'},
     {key:'lifeStages', label:'Giai Đoạn & Đỉnh Cao'},
     {key:'charts', label:'Biểu Đồ / Mũi Tên'},
+    {key:'combine', label:'🌉 Kết Hợp Chỉ Số'},
     {key:'time', label:'🕒 Vận Theo Thời Gian'},
     {key:'summary', label:'📋 Tổng Hợp'},
   ];
@@ -890,6 +954,60 @@ function renderCharts(r){
 }
 
 /* =========================================================
+   KẾT HỢP CHỈ SỐ — RENDER
+   ========================================================= */
+function renderCombine(r){
+  const box = document.getElementById('combineCard');
+  if (!box) return;
+  const c = r.combine;
+
+  let html = `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+    <h2 style="margin-bottom:0;">🌉 Kết Hợp Chỉ Số — Số Thử Thách &amp; Số Cầu Nối</h2>
+    <button class="btn-ghost no-print btn-export" onclick="exportPDF('combine')">🖨️ Xuất PDF</button>
+  </div>`;
+  html += `<p class="muted" style="margin-bottom:16px;"><i>Đây là nội dung THAM KHẢO BỔ SUNG, biên soạn từ nguồn quốc tế uy tín (Hans Decoz — World Numerology; có đối chiếu thêm nguyên tắc tổng hợp của Matthew Goodwin), KHÔNG trích từ tài liệu Excel gốc của anh và KHÔNG do AI tự suy diễn lúc chạy — đã nghiên cứu, biên soạn sẵn và lưu vào Thư viện. Mục tiêu: khi 2 chỉ số của bạn có xu hướng khác/ngược nhau, đây là công cụ để xác định bài học cần khắc phục (Số Thử Thách) và phẩm chất cần bồi đắp để dung hòa (Số Cầu Nối) — không phải kiểu chấm điểm cộng trừ.</i></p>`;
+
+  // ----- Số Thử Thách -----
+  html += `<h3 style="margin-bottom:10px;">Số Thử Thách (Challenge Numbers)</h3>`;
+  html += `<p class="muted" style="margin-bottom:10px;">4 con số dưới đây (0–8) chỉ ra nhược điểm/bài học cần chủ động khắc phục ở từng giai đoạn cuộc đời — tính riêng biệt với 8 chỉ số cốt lõi ở trên.</p>`;
+  html += `<div class="stage-row">`;
+  c.challenges.forEach(ch=>{
+    html += `<div class="stage-block"><div class="age">${ch.period}</div><div class="num">${ch.value}</div><div class="lbl">Thử Thách ${ch.n}${ch.n===3?' (Chính)':''}</div></div>`;
+  });
+  html += `</div>`;
+  c.challenges.forEach((ch,i)=>{
+    const text = CHALLENGE_CONTENT[String(ch.value)];
+    html += `<details ${i===2?'open':''}><summary>Thử Thách ${ch.n}${ch.n===3?' — Thử Thách Chính':''} (số ${ch.value}) — ${ch.period}</summary>
+      <div class="body">${text || 'Chưa có dữ liệu.'}</div></details>`;
+  });
+  html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 20px;">Nguồn: ${CHALLENGE_SOURCE}.</p>`;
+
+  // ----- Số Cầu Nối -----
+  html += `<h3 style="margin:20px 0 10px;">Số Cầu Nối (Bridge Numbers)</h3>`;
+  html += `<p class="muted" style="margin-bottom:10px;">Khi 2 chỉ số dưới đây có xu hướng khác nhau (VD Đường Đời thiên về tự do, Sứ Mệnh thiên về trách nhiệm), Số Cầu Nối chỉ ra PHẨM CHẤT cần chủ động rèn luyện để dung hòa hai xu hướng đó — không phải "bên nào thắng, bên nào thua".</p>`;
+  c.bridges.forEach((b,i)=>{
+    const uniBridge = universalOf(b.value);
+    const uniA = universalOf(b.va);
+    const uniB = universalOf(b.vb);
+    html += `<details ${i===0?'open':''}>
+      <summary>Cầu ${b.labelA} (${b.va}) ↔ ${b.labelB} (${b.vb}) — Cầu Nối = ${b.value}</summary>
+      <div class="body">
+        <p style="margin-bottom:8px;">${b.note}</p>
+        ${uniA && uniA.tinhCach ? `<p><b style="color:var(--gold-light)">${b.labelA} (${b.va}) — tính cách:</b> ${uniA.tinhCach}</p>` : ''}
+        ${uniB && uniB.tinhCach ? `<p style="margin-top:6px;"><b style="color:var(--gold-light)">${b.labelB} (${b.vb}) — tính cách:</b> ${uniB.tinhCach}</p>` : ''}
+        <p style="margin-top:10px;border-top:1px dashed var(--border);padding-top:10px;"><b style="color:var(--gold-light)">Cầu Nối ${b.value} — phẩm chất cần bồi đắp để dung hòa:</b> ${uniBridge ? (uniBridge.phoQuat || uniBridge.tinhCach || 'Chưa có dữ liệu.') : 'Chưa có dữ liệu.'}</p>
+      </div>
+    </details>`;
+  });
+  html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 4px;">Nguồn: ${BRIDGE_SOURCE}. Ý nghĩa Cầu Nối dùng lại đúng bộ "Ý nghĩa các con số" đã có trong Thư viện của anh.</p>`;
+  html += `<p class="muted" style="font-size:0.72rem;margin-top:4px;"><i>* Quy ước: nếu chỉ số nguồn là số Vua (11/22/33), Cầu Nối được tính trên dạng đã rút gọn hoàn toàn về 1 chữ số, theo cùng nguyên tắc rút gọn Decoz áp dụng cho Số Thử Thách.</i></p>`;
+
+  html += `<p class="muted" style="margin-top:16px;font-size:0.75rem;">* Phần "Hài Hòa/Xung Khắc" theo bảng đầy đủ 45 cặp số của Matthew Goodwin hiện CHƯA đưa vào app vì tài liệu gốc tra cứu được không hiển thị đủ toàn bộ bảng — tránh tự suy diễn khi chưa có căn cứ đầy đủ. Xem chi tiết trong tài liệu "4. Tài Liệu Tham Khảo Bổ Sung — Kỹ thuật kết hợp nhiều chỉ số" trong Thư viện.</p>`;
+
+  box.innerHTML = html;
+}
+
+/* =========================================================
    PERSONAL YEAR / MONTH / DAY
    ========================================================= */
 let birthDay=null, birthMonth=null;
@@ -1048,6 +1166,7 @@ function printTabLabel(key){
     karmic:'Nghiệp & Nợ Nghiệp',
     lifeStages:'Giai Đoạn & Đỉnh Cao',
     charts:'Biểu Đồ / Mũi Tên',
+    combine:'Kết Hợp Chỉ Số',
     time:'Vận Theo Thời Gian',
     summary:'Bản Luận Giải Tổng Hợp',
   };
@@ -1073,7 +1192,7 @@ function exportPDF(key){
     document.querySelectorAll('.section').forEach(s=>{
       if (s.dataset.key !== 'time') s.classList.add('print-target');
     });
-    scopeLabel = 'Toàn bộ báo cáo (8 chỉ số cốt lõi, Nghiệp &amp; Nợ Nghiệp, Giai Đoạn &amp; Đỉnh Cao, Biểu Đồ, Bản Tổng Hợp)';
+    scopeLabel = 'Toàn bộ báo cáo (8 chỉ số cốt lõi, Nghiệp &amp; Nợ Nghiệp, Giai Đoạn &amp; Đỉnh Cao, Biểu Đồ, Kết Hợp Chỉ Số, Bản Tổng Hợp)';
   } else {
     const target = document.querySelector('.section[data-key="'+key+'"]');
     if (target) target.classList.add('print-target');
@@ -1189,6 +1308,7 @@ document.getElementById('calcBtn').addEventListener('click', ()=>{
   renderKarmic(r);
   renderLifeStages(r);
   renderCharts(r);
+  renderCombine(r);
   renderSummaryReport(r, name);
   document.getElementById('resultsWrap').classList.remove('hidden');
 
