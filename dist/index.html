@@ -177,7 +177,8 @@
     .section[data-key="lifeStages"]{order:3;}
     .section[data-key="charts"]{order:4;}
     .section[data-key="combine"]{order:5;}
-    .section[data-key="summary"]{order:6;}
+    .section[data-key="partner"]{order:6;}
+    .section[data-key="summary"]{order:7;}
     .card{background:#fff !important;border:1px solid #999 !important;box-shadow:none !important;color:#141414 !important;backdrop-filter:none !important;page-break-inside:avoid;}
     h1,h2,h3{color:#7a5a12 !important;}
     p,div,span,li,.formula{color:#141414 !important;}
@@ -262,6 +263,27 @@
         <button class="btn-ghost today-btn" id="todayBtn">Hôm nay</button>
       </div>
       <div id="timeResults"></div>
+    </div>
+
+    <div class="section card" id="partnerCard" data-key="partner">
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <h2 style="margin-bottom:0;">🤝 Tương Hợp Đối Tác</h2>
+        <button class="btn-ghost no-print btn-export" onclick="exportPDF('partner')">🖨️ Xuất PDF</button>
+      </div>
+      <p class="muted" style="margin-bottom:14px;">Nhập họ tên &amp; ngày sinh của đối tác/đối tượng (bạn bè, người yêu, đối tác kinh doanh...) để xem mức độ tương hợp với bạn — hữu ích khi cân nhắc hợp tác làm ăn. Cần tính chỉ số của chính mình ở form trên cùng trước.</p>
+      <div class="datebar">
+        <div class="field">
+          <label for="partnerName">Họ tên đối tác</label>
+          <input class="input" id="partnerName" type="text" placeholder="VD: Nguyễn Văn A" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="partnerBirth">Ngày sinh đối tác</label>
+          <input class="input date-mask" id="partnerBirth" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" autocomplete="off">
+        </div>
+        <button class="btn-ghost" id="partnerCalcBtn">Tính Tương Hợp</button>
+      </div>
+      <p class="muted" id="partnerError" style="color:#EF9A9A;display:none;"></p>
+      <div id="partnerResults"></div>
     </div>
 
   </div>
@@ -390,6 +412,48 @@ function computeAttitude(day,month){
 function computeMaturity(lifePathValue, destinyValue){
   const raw = lifePathValue+destinyValue;
   return {value: reduceKeepMaster(raw), raw};
+}
+/* =========================================================
+   TƯƠNG HỢP ĐỐI TÁC (2 người) — Con Số Căng Thẳng (Tâm Hồn &
+   Thái Độ) và Các Tổ Hợp. Nguồn: đúng tài liệu Excel gốc của anh
+   (ảnh chụp trực tiếp từ sheet, dòng "3b. CON SỐ CĂNG THẲNG TÂM
+   HỒN" và "CÁC TỔ HỢP"; phần Căng Thẳng Thái Độ do anh xác nhận
+   trực tiếp trong hội thoại — dùng ĐÚNG công thức tương tự đã có
+   cho Căng Thẳng Tâm Hồn: lấy số lớn trừ số nhỏ). LƯU Ý MINH BẠCH:
+   đoạn "CÁC TỔ HỢP" trong ảnh chụp bị cắt ở câu "Kiểm tra các số
+   của bạn trong những tổ hợp:" — có thể còn 1 bảng/danh sách chi
+   tiết hơn ở ngay sau đó trong Excel mà em chưa nhìn thấy. Phần
+   triển khai dưới đây chỉ dùng ĐÚNG những gì đã đọc được (3 nhóm
+   số, cách xác định nhóm qua Ngày Sinh/Đường Đời, ý nghĩa khi
+   trùng/lệch nhóm) — nếu anh gửi thêm phần bị cắt, em sẽ bổ sung.
+   Câu "tư vấn quan hệ đối tác" tổng hợp cuối mục do Claude viết
+   kết nối từ 3 dữ kiện đã có căn cứ (2 số Căng Thẳng + Tổ Hợp),
+   không phải trích nguyên văn từ Excel — có ghi chú rõ trong app.
+   ========================================================= */
+function pairTension(a, b){
+  return Math.abs(a - b);
+}
+const TRIADS = [[1,5,7],[2,4,8],[3,6,9]];
+function triadGroupOf(value){
+  // Tổ hợp dùng dạng rút gọn hoàn toàn về 1 chữ số (kể cả nếu value là số Vua
+  // 11/22, vì 3 nhóm tổ hợp chỉ gồm các chữ số 1-9) — nguồn không nói khác.
+  const base = value>9 ? reduceFull(value) : value;
+  for (let i=0;i<TRIADS.length;i++) if (TRIADS[i].includes(base)) return i;
+  return -1;
+}
+function personTriads(lifePathValue, birthdayValue){
+  const g1 = triadGroupOf(lifePathValue);
+  const g2 = triadGroupOf(birthdayValue);
+  const groups = (g1===g2) ? [g1] : [g1,g2];
+  return {groups, lifePathGroup:g1, birthdayGroup:g2, single:(g1===g2)};
+}
+function computeCompat(rA, rB){
+  const soulTension = pairTension(rA.soul.value, rB.soul.value);
+  const attitudeTension = pairTension(rA.attitude.value, rB.attitude.value);
+  const triadsA = personTriads(rA.lifePath.value, rA.birthday.value);
+  const triadsB = personTriads(rB.lifePath.value, rB.birthday.value);
+  const overlap = triadsA.groups.filter(g=>triadsB.groups.includes(g));
+  return {soulTension, attitudeTension, triadsA, triadsB, overlap};
 }
 function missingNumbers(seq){
   const present = new Set(seq.map(s=>letterValue(s.ch)));
@@ -647,6 +711,7 @@ function renderTabs(){
     {key:'lifeStages', label:'Giai Đoạn & Đỉnh Cao'},
     {key:'charts', label:'Biểu Đồ / Mũi Tên'},
     {key:'combine', label:'🌉 Kết Hợp Chỉ Số'},
+    {key:'partner', label:'🤝 Tương Hợp Đối Tác'},
     {key:'time', label:'🕒 Vận Theo Thời Gian'},
     {key:'summary', label:'📋 Tổng Hợp'},
   ];
@@ -1067,6 +1132,125 @@ function renderCombine(r){
 }
 
 /* =========================================================
+   TƯƠNG HỢP ĐỐI TÁC — RENDER
+   ========================================================= */
+function triadLabel(groupIdx){
+  if (groupIdx < 0) return '—';
+  return `(${TRIADS[groupIdx].join(', ')})`;
+}
+function universalMeaningHTML(uni){
+  if (!uni) return 'Chưa có dữ liệu.';
+  const parts = [];
+  if (uni.phoQuat) parts.push(`<p><b style="color:var(--gold-light)">Ý nghĩa phổ quát:</b> ${uni.phoQuat}</p>`);
+  if (uni.nangLuc) parts.push(`<p style="margin-top:6px;"><b style="color:var(--gold-light)">Năng lực:</b> ${uni.nangLuc}</p>`);
+  if (uni.tinhCach) parts.push(`<p style="margin-top:6px;"><b style="color:var(--gold-light)">Biểu hiện:</b> ${uni.tinhCach}</p>`);
+  if (uni.luanGiai) parts.push(`<p style="margin-top:6px;"><b style="color:var(--gold-light)">Luận giải:</b> ${uni.luanGiai}</p>`);
+  return parts.length ? parts.join('') : 'Chưa có dữ liệu.';
+}
+function renderPartnerResult(rA, nameA, rB, nameB){
+  const box = document.getElementById('partnerResults');
+  const compat = computeCompat(rA, rB);
+  const uniSoulTension = universalOf(compat.soulTension);
+  const uniAttTension = universalOf(compat.attitudeTension);
+  const soulBig = rA.soul.value >= rB.soul.value ? rA.soul.value : rB.soul.value;
+  const soulSmall = rA.soul.value >= rB.soul.value ? rB.soul.value : rA.soul.value;
+  const attBig = rA.attitude.value >= rB.attitude.value ? rA.attitude.value : rB.attitude.value;
+  const attSmall = rA.attitude.value >= rB.attitude.value ? rB.attitude.value : rA.attitude.value;
+
+  let html = `<div class="grid2" style="margin:16px 0;">
+    <div class="ov-item" style="cursor:default;"><div class="v">${rA.lifePath.value}</div><div class="l">Đường Đời — ${nameA}</div></div>
+    <div class="ov-item" style="cursor:default;"><div class="v">${rB.lifePath.value}</div><div class="l">Đường Đời — ${nameB}</div></div>
+    <div class="ov-item" style="cursor:default;"><div class="v">${rA.soul.value}</div><div class="l">Linh Hồn — ${nameA}</div></div>
+    <div class="ov-item" style="cursor:default;"><div class="v">${rB.soul.value}</div><div class="l">Linh Hồn — ${nameB}</div></div>
+    <div class="ov-item" style="cursor:default;"><div class="v">${rA.attitude.value}</div><div class="l">Thái Độ — ${nameA}</div></div>
+    <div class="ov-item" style="cursor:default;"><div class="v">${rB.attitude.value}</div><div class="l">Thái Độ — ${nameB}</div></div>
+    <div class="ov-item" style="cursor:default;"><div class="v">${rA.birthday.value}</div><div class="l">Ngày Sinh — ${nameA}</div></div>
+    <div class="ov-item" style="cursor:default;"><div class="v">${rB.birthday.value}</div><div class="l">Ngày Sinh — ${nameB}</div></div>
+  </div>`;
+
+  // ----- Con Số Căng Thẳng Tâm Hồn -----
+  html += `<h3 style="margin:20px 0 10px;">Con Số Căng Thẳng Tâm Hồn</h3>`;
+  html += `<p class="muted" style="margin-bottom:10px;">Số đo mức độ hòa hợp/khả năng giải quyết xung đột về ĐỘNG LỰC — MONG MUỐN NỘI TÂM giữa 2 người, tính từ Linh Hồn của mỗi người. Công thức: lấy Linh Hồn lớn trừ Linh Hồn nhỏ (${soulBig} − ${soulSmall} = ${compat.soulTension}).</p>`;
+  html += `<div class="stage-row"><div class="stage-block"><div class="age">${nameA} vs ${nameB}</div><div class="num">${compat.soulTension}</div><div class="lbl">Căng Thẳng Tâm Hồn</div></div></div>`;
+  html += `<details open><summary>Ý nghĩa con số Căng Thẳng Tâm Hồn ${compat.soulTension}</summary>
+    <div class="body">${universalMeaningHTML(uniSoulTension)}</div></details>`;
+  html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 20px;">Nguồn: tài liệu Excel gốc của anh (mục "Con số Căng thẳng Tâm hồn"). Ý nghĩa từng con số dùng lại đúng bộ "Ý nghĩa các con số" đã có trong Thư viện.</p>`;
+
+  // ----- Con Số Căng Thẳng Thái Độ -----
+  html += `<h3 style="margin:20px 0 10px;">Con Số Căng Thẳng Thái Độ</h3>`;
+  html += `<p class="muted" style="margin-bottom:10px;">Số đo mức độ khác biệt về CÁCH PHẢN ỨNG — ẤN TƯỢNG BAN ĐẦU khi 2 người mới tiếp xúc/làm việc chung, tính từ Thái Độ của mỗi người (cùng công thức: số lớn trừ số nhỏ). ${attBig} − ${attSmall} = ${compat.attitudeTension}.</p>`;
+  html += `<div class="stage-row"><div class="stage-block"><div class="age">${nameA} vs ${nameB}</div><div class="num">${compat.attitudeTension}</div><div class="lbl">Căng Thẳng Thái Độ</div></div></div>`;
+  html += `<details open><summary>Ý nghĩa con số Căng Thẳng Thái Độ ${compat.attitudeTension}</summary>
+    <div class="body">${universalMeaningHTML(uniAttTension)}</div></details>`;
+  html += `<p class="muted" style="font-size:0.75rem;margin:8px 0 20px;">Nguồn: công thức tương tự Căng Thẳng Tâm Hồn, áp dụng cho chỉ số Thái Độ (theo xác nhận trực tiếp của anh). Ý nghĩa từng con số dùng lại đúng bộ "Ý nghĩa các con số" đã có trong Thư viện.</p>`;
+
+  // ----- Các Tổ Hợp -----
+  html += `<h3 style="margin:20px 0 10px;">Các Tổ Hợp</h3>`;
+  html += `<p class="muted" style="margin-bottom:10px;">3 nhóm số hợp nhau tự nhiên: <b>(1, 5, 7)</b> · <b>(2, 4, 8)</b> · <b>(3, 6, 9)</b>. Tổ hợp của mỗi người xác định qua Đường Đời và Ngày Sinh (đã rút gọn) — nếu 2 chỉ số này rơi vào 2 nhóm khác nhau, người đó có 2 tổ hợp.</p>`;
+  html += `<div class="grid2" style="margin-bottom:14px;">
+    <div class="ov-item" style="cursor:default;"><div class="v" style="font-size:1.1rem;">${triadLabel(compat.triadsA.lifePathGroup)}${!compat.triadsA.single ? ' / '+triadLabel(compat.triadsA.birthdayGroup) : ''}</div><div class="l">Tổ hợp của ${nameA}</div></div>
+    <div class="ov-item" style="cursor:default;"><div class="v" style="font-size:1.1rem;">${triadLabel(compat.triadsB.lifePathGroup)}${!compat.triadsB.single ? ' / '+triadLabel(compat.triadsB.birthdayGroup) : ''}</div><div class="l">Tổ hợp của ${nameB}</div></div>
+  </div>`;
+  if (compat.overlap.length){
+    html += `<div class="ok-box">${nameA} và ${nameB} có chung tổ hợp ${compat.overlap.map(g=>triadLabel(g)).join(', ')} — theo tài liệu gốc, đây là dấu hiệu 2 người dễ thấu hiểu và gắn kết tự nhiên, thuận lợi khi hợp tác làm ăn hoặc gắn bó lâu dài.</div>`;
+  } else {
+    html += `<div class="karmic-box">${nameA} và ${nameB} KHÔNG có chung tổ hợp nào — theo tài liệu gốc, điều này không có nghĩa là xung khắc, nhưng 2 người có thể cần chủ động tìm hiểu nhau nhiều hơn để hòa hợp, vì không có sẵn sự "thấu hiểu tự nhiên" mà tổ hợp chung mang lại.</div>`;
+  }
+  if (!compat.triadsA.single){
+    html += `<p class="muted" style="font-size:0.78rem;margin-top:10px;"><i>Riêng ${nameA}: Ngày Sinh và Đường Đời rơi vào 2 tổ hợp khác nhau — theo tài liệu gốc, người thuộc trường hợp này "không phải lúc nào cũng biết mình muốn gì", nên cân nhắc cả 2 tổ hợp khi xét tương hợp.</i></p>`;
+  }
+  if (!compat.triadsB.single){
+    html += `<p class="muted" style="font-size:0.78rem;margin-top:6px;"><i>Riêng ${nameB}: Ngày Sinh và Đường Đời rơi vào 2 tổ hợp khác nhau, tương tự lưu ý trên.</i></p>`;
+  }
+  html += `<p class="muted" style="font-size:0.75rem;margin-top:14px;">Nguồn: tài liệu Excel gốc của anh (mục "Các Tổ Hợp"). <b>Lưu ý minh bạch:</b> đoạn gốc trong Excel dừng ở câu "Kiểm tra các số của bạn trong những tổ hợp:" — có thể còn bảng/danh sách chi tiết hơn ngay sau đó mà em chưa xem được trong ảnh chụp. Nếu anh có đầy đủ phần này, gửi thêm để em hoàn thiện chính xác hơn.</p>`;
+
+  // ----- Tư Vấn Quan Hệ Đối Tác (tổng hợp) -----
+  html += `<h3 style="margin:24px 0 10px;">Tư Vấn Quan Hệ Đối Tác (tổng hợp)</h3>`;
+  const triadNote = compat.overlap.length
+    ? `2 bên có chung tổ hợp số tự nhiên — nền tảng thuận lợi để thấu hiểu nhau ngay từ đầu`
+    : `2 bên KHÔNG có chung tổ hợp số tự nhiên nào — sự thấu hiểu ban đầu sẽ không đến một cách tự động, cần chủ động tìm hiểu nhau nhiều hơn`;
+  html += `<div class="body" style="background:rgba(201,168,76,0.06);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+    <p>Kết hợp cả 3 dữ kiện phía trên để cân nhắc hợp tác làm ăn giữa <b>${nameA}</b> và <b>${nameB}</b>:</p>
+    <p style="margin-top:8px;">• <b>Căng Thẳng Tâm Hồn (${compat.soulTension})</b> — cho biết mức khác biệt về ĐỘNG LỰC/MONG MUỐN sâu bên trong của hai người khi cùng theo đuổi một mục tiêu chung.</p>
+    <p style="margin-top:6px;">• <b>Căng Thẳng Thái Độ (${compat.attitudeTension})</b> — cho biết mức khác biệt trong CÁCH PHẢN ỨNG, ấn tượng ban đầu và cách tiếp cận công việc khi hai người mới làm việc cùng nhau.</p>
+    <p style="margin-top:6px;">• <b>Tổ Hợp</b> — ${triadNote}.</p>
+    <p style="margin-top:10px;border-top:1px dashed var(--border);padding-top:10px;">Nên đọc kỹ đúng phần ý nghĩa cụ thể của 2 con số Căng Thẳng ở trên (đó là nội dung có căn cứ từ đúng bộ "Ý nghĩa các con số" trong Thư viện) để biết CỤ THỂ điểm cần lưu ý khi bất đồng xảy ra, thay vì chỉ nhìn vào con số. Tổ Hợp cho biết mức độ "hợp cạ" tự nhiên ban đầu; 2 chỉ số Căng Thẳng mới là nơi chỉ ra bản chất của khác biệt và cách dung hòa khi hợp tác lâu dài.</p>
+  </div>`;
+  html += `<p class="muted" style="font-size:0.72rem;margin-top:8px;"><i>* Đoạn tư vấn tổng hợp này do Claude viết kết nối từ 3 dữ kiện đã có căn cứ ở trên, KHÔNG phải trích nguyên văn từ Excel gốc — giữ đúng nguyên tắc minh bạch app đã áp dụng xuyên suốt.</i></p>`;
+
+  box.innerHTML = html;
+}
+function computeAndRenderPartner(){
+  const errEl = document.getElementById('partnerError');
+  errEl.style.display='none';
+  if (!currentResult){
+    errEl.textContent = 'Vui lòng tính chỉ số của chính mình ở form trên cùng trước.';
+    errEl.style.display='block';
+    return;
+  }
+  const name = document.getElementById('partnerName').value.trim();
+  if (!name){
+    errEl.textContent = 'Vui lòng nhập họ tên đối tác.';
+    errEl.style.display='block';
+    return;
+  }
+  const clean = stripVietnamese(name).replace(/[^A-Z\s]/g,'');
+  if (!clean.trim()){
+    errEl.textContent = 'Họ tên đối tác không hợp lệ.';
+    errEl.style.display='block';
+    return;
+  }
+  const parsed = readMaskedDate('partnerBirth');
+  if (!parsed.ok){
+    errEl.textContent = 'Ngày sinh đối tác không hợp lệ. Vui lòng nhập đúng định dạng dd/mm/yyyy.';
+    errEl.style.display='block';
+    return;
+  }
+  const rB = fullCalculate(name, parsed.d, parsed.m, parsed.y);
+  renderPartnerResult(currentResult, currentName, rB, name);
+}
+
+/* =========================================================
    PERSONAL YEAR / MONTH / DAY
    ========================================================= */
 let birthDay=null, birthMonth=null;
@@ -1226,6 +1410,7 @@ function printTabLabel(key){
     lifeStages:'Giai Đoạn & Đỉnh Cao',
     charts:'Biểu Đồ / Mũi Tên',
     combine:'Kết Hợp Chỉ Số',
+    partner:'Tương Hợp Đối Tác',
     time:'Vận Theo Thời Gian',
     summary:'Bản Luận Giải Tổng Hợp',
   };
@@ -1249,7 +1434,7 @@ function exportPDF(key){
   let scopeLabel;
   if (key === 'all'){
     document.querySelectorAll('.section').forEach(s=>{
-      if (s.dataset.key !== 'time') s.classList.add('print-target');
+      if (s.dataset.key !== 'time' && s.dataset.key !== 'partner') s.classList.add('print-target');
     });
     scopeLabel = 'Toàn bộ báo cáo (8 chỉ số cốt lõi, Nghiệp &amp; Nợ Nghiệp, Giai Đoạn &amp; Đỉnh Cao, Biểu Đồ, Kết Hợp Chỉ Số, Bản Tổng Hợp)';
   } else {
@@ -1341,6 +1526,8 @@ attachDateMask('birthDate');
 attachDateMask('checkDate', (parsed)=>{
   renderTimeResults(new Date(parsed.y, parsed.m-1, parsed.d));
 });
+attachDateMask('partnerBirth');
+document.getElementById('partnerCalcBtn').addEventListener('click', computeAndRenderPartner);
 
 document.getElementById('calcBtn').addEventListener('click', ()=>{
   const name = document.getElementById('fullName').value.trim();
@@ -1370,6 +1557,13 @@ document.getElementById('calcBtn').addEventListener('click', ()=>{
   renderCombine(r);
   renderSummaryReport(r, name);
   document.getElementById('resultsWrap').classList.remove('hidden');
+  // Nếu đối tác đã từng được nhập/tính trước đó, tính lại luôn tương hợp với
+  // dữ liệu MỚI của bản thân (tránh hiển thị kết quả cũ/lệch sau khi sửa lại
+  // họ tên hoặc ngày sinh của chính mình).
+  document.getElementById('partnerResults').innerHTML = '';
+  if (document.getElementById('partnerName').value.trim() && readMaskedDate('partnerBirth').ok){
+    computeAndRenderPartner();
+  }
 
   const checkParsed = readMaskedDate('checkDate');
   let checkDateObj;
